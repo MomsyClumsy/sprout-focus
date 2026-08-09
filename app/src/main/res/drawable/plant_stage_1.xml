@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Стадия 1: росток. Два семядольных листа.
+
+    Свет во всей серии падает сверху слева: у каждого листа градиент идёт
+    от его верхнего левого угла к нижнему правому. Поэтому листья выглядят
+    освещёнными с одной стороны, а не раскрашенными по отдельности.
+
+    Стебель — не отрезок, а фигура с заливкой: снизу шире, кверху сужается.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <path
+        android:pathData="M34,182 C34,177.03 63.55,173 100,173 C136.45,173 166,177.03 166,182 C166,186.97 136.45,191 100,191 C63.55,191 34,186.97 34,182 Z"
+        android:fillColor="@color/plant_shadow" />
+
+    <path
+        android:pathData="M38,177 C38,171.48 65.76,167 100,167 C134.24,167 162,171.48 162,177 C162,182.52 134.24,187 100,187 C65.76,187 38,182.52 38,177 Z"
+        android:fillColor="@color/plant_soil" />
+    <path
+        android:pathData="M50,174 C50,170.14 72.38,167 100,167 C127.62,167 150,170.14 150,174 C150,177.86 127.62,181 100,181 C72.38,181 50,177.86 50,174 Z"
+        android:fillColor="@color/plant_soil_top" />
+
+    <!-- Стебель обрывается на y=175, в середине пятачка земли:
+         так он выходит ИЗ земли, а не лежит поверх неё. -->
+    <path android:pathData="M95.5,175 C94.5,161 97,150 98,139 L102,139 C103,150 105.5,161 104.5,175 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="94" android:startY="159"
+                android:endX="106" android:endY="159"
+                android:startColor="@color/plant_stem_light"
+                android:endColor="@color/plant_stem_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- левый семядольный лист -->
+    <path android:pathData="M98,143 C82,150 62,143 54,126 C70,115 92,123 98,143 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="54" android:startY="115"
+                android:endX="98" android:endY="150"
+                android:startColor="@color/plant_leaf_light"
+                android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- правый семядольный лист -->
+    <path android:pathData="M102,139 C111,121 131,113 147,121 C141,139 119,147 102,139 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="102" android:startY="113"
+                android:endX="147" android:endY="147"
+                android:startColor="@color/plant_leaf_light"
+                android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- прожилки -->
+    <path
+        android:pathData="M97,142 C86,142 72,136 61,127"
+        android:strokeColor="@color/plant_rib"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M103,138 C112,130 126,123 139,122"
+        android:strokeColor="@color/plant_rib"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round" />
+</vector>

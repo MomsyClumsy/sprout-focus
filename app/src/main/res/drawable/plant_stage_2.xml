@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Стадия 2: побег. Стебель вытянулся, появилась вторая пара листьев.
+
+    Верхняя и нижняя пары — разные фигуры, а не одна пара, уменьшенная
+    масштабом. Копии сразу выдают себя: растение выглядит собранным
+    из дублей, а не выросшим.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <path
+        android:pathData="M34,182 C34,177.03 63.55,173 100,173 C136.45,173 166,177.03 166,182 C166,186.97 136.45,191 100,191 C63.55,191 34,186.97 34,182 Z"
+        android:fillColor="@color/plant_shadow" />
+
+    <path
+        android:pathData="M38,177 C38,171.48 65.76,167 100,167 C134.24,167 162,171.48 162,177 C162,182.52 134.24,187 100,187 C65.76,187 38,182.52 38,177 Z"
+        android:fillColor="@color/plant_soil" />
+    <path
+        android:pathData="M50,174 C50,170.14 72.38,167 100,167 C127.62,167 150,170.14 150,174 C150,177.86 127.62,181 100,181 C72.38,181 50,177.86 50,174 Z"
+        android:fillColor="@color/plant_soil_top" />
+
+    <path android:pathData="M94.5,175 C93.5,149 96,120 97,94 L103,94 C104,120 106.5,149 105.5,175 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="93" android:startY="136"
+                android:endX="107" android:endY="136"
+                android:startColor="@color/plant_stem_light"
+                android:endColor="@color/plant_stem_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- нижняя пара -->
+    <path android:pathData="M97,150 C85,156 68,150 60,136 C73,127 91,133 97,150 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="60" android:startY="127"
+                android:endX="97" android:endY="156"
+                android:startColor="@color/plant_leaf_light"
+                android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M103,146 C111,131 128,124 141,131 C136,146 117,153 103,146 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="103" android:startY="124"
+                android:endX="141" android:endY="153"
+                android:startColor="@color/plant_leaf_light"
+                android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- верхняя пара -->
+    <path android:pathData="M97,116 C81,120 61,111 53,93 C70,84 90,94 97,116 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="53" android:startY="84"
+                android:endX="97" android:endY="120"
+                android:startColor="@color/plant_leaf_light"
+                android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M103,112 C112,93 132,84 148,93 C142,111 120,120 103,112 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="103" android:startY="84"
+                android:endX="148" android:endY="120"
+                android:startColor="@color/plant_leaf_light"
+                android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+
+    <path android:pathData="M97,148 C87,147 74,142 63,136"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+    <path android:pathData="M103,144 C112,137 124,132 136,131"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+    <path android:pathData="M97,114 C84,112 69,105 57,95"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+    <path android:pathData="M103,110 C113,101 128,95 142,95"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+</vector>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="sprout_background">#F7FBF2</color>
+    <color name="ic_launcher_background">#BFF0BC</color>
+
+    <!-- Растение.
+         Вынесены в ресурсы, а не зашиты в vector-файлы, потому что земля
+         и стебель обязаны меняться вместе с темой: коричневый #5A4632
+         на тёмном фоне #11140F практически пропадал.
+         Ночной вариант лежит в values-night/colors.xml. -->
+    <color name="plant_leaf_light">#7CBE7B</color>
+    <color name="plant_leaf_dark">#3F7A42</color>
+    <color name="plant_stem_light">#58A05A</color>
+    <color name="plant_stem_dark">#3F7A42</color>
+
+    <!-- Земля светлее, чем просилась интуитивно: тёмный коричневый пятачок
+         на светлом фоне перетягивал внимание на себя, и первым в картинке
+         читалась земля, а не растение. -->
+    <color name="plant_soil">#7B644C</color>
+    <color name="plant_soil_top">#9A7D5F</color>
+
+    <color name="plant_seed">#8A6E4A</color>
+    <color name="plant_seed_hi">#A98D63</color>
+
+    <color name="plant_bloom">#E4C96C</color>
+    <color name="plant_bloom_core">#C29B45</color>
+
+    <!-- Прожилка — полупрозрачная поверх листа, поэтому один цвет
+         работает на любом оттенке зелени. -->
+    <color name="plant_rib">#80FFFFFF</color>
+
+    <!-- Тень на земле: тонирована в зелёный, а не в серый,
+         иначе под растением появляется грязное пятно. -->
+    <color name="plant_shadow">#213F7A42</color>
+</resources>

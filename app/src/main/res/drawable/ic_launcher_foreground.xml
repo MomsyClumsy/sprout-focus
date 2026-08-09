@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Росток: стебель и два листа. Векторная иконка, масштабируется без потерь. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- стебель -->
+    <path
+        android:fillColor="#2E5E30"
+        android:pathData="M52,78 C52,66 52,58 54,50 L57,50 C55,58 55,66 55,78 Z" />
+
+    <!-- левый лист -->
+    <path
+        android:fillColor="#4C8C4A"
+        android:pathData="M54,56 C44,56 36,50 34,40 C44,38 52,43 54,53 Z" />
+
+    <!-- правый лист -->
+    <path
+        android:fillColor="#68B06A"
+        android:pathData="M56,52 C58,41 66,34 76,34 C77,45 70,53 58,54 Z" />
+</vector>

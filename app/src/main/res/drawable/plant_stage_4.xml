@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Стадия 4: цветение. Растение выросло и уходит в коллекцию.
+
+    Лепестков пять, каждый — копия одной фигуры, повёрнутая на 72°.
+    Здесь копия уместна: у цветка лепестки и правда одинаковые,
+    в отличие от листьев на стебле.
+
+    Пар листьев только две: выше стебель занят цветком, и третья пара
+    начинала спорить с ним за внимание.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <path
+        android:pathData="M34,182 C34,177.03 63.55,173 100,173 C136.45,173 166,177.03 166,182 C166,186.97 136.45,191 100,191 C63.55,191 34,186.97 34,182 Z"
+        android:fillColor="@color/plant_shadow" />
+
+    <path
+        android:pathData="M38,177 C38,171.48 65.76,167 100,167 C134.24,167 162,171.48 162,177 C162,182.52 134.24,187 100,187 C65.76,187 38,182.52 38,177 Z"
+        android:fillColor="@color/plant_soil" />
+    <path
+        android:pathData="M50,174 C50,170.14 72.38,167 100,167 C127.62,167 150,170.14 150,174 C150,177.86 127.62,181 100,181 C72.38,181 50,177.86 50,174 Z"
+        android:fillColor="@color/plant_soil_top" />
+
+    <path android:pathData="M93.5,175 C92.5,145 95,110 96,74 L104,74 C105,110 107.5,145 106.5,175 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="92" android:startY="126"
+                android:endX="108" android:endY="126"
+                android:startColor="@color/plant_stem_light"
+                android:endColor="@color/plant_stem_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- нижняя пара -->
+    <path android:pathData="M97,158 C87,163 72,158 65,146 C76,139 92,144 97,158 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="65" android:startY="139" android:endX="97" android:endY="163"
+                android:startColor="@color/plant_leaf_light" android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M103,154 C110,141 124,135 135,141 C131,154 115,160 103,154 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="103" android:startY="135" android:endX="135" android:endY="160"
+                android:startColor="@color/plant_leaf_light" android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- верхняя пара -->
+    <path android:pathData="M97,124 C84,129 66,122 57,106 C72,97 90,105 97,124 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="57" android:startY="97" android:endX="97" android:endY="129"
+                android:startColor="@color/plant_leaf_light" android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M103,120 C111,103 129,95 143,103 C137,120 118,127 103,120 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="103" android:startY="95" android:endX="143" android:endY="127"
+                android:startColor="@color/plant_leaf_light" android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- цветок: один лепесток, повёрнутый пять раз -->
+    <group android:rotation="0" android:pivotX="100" android:pivotY="54">
+        <path android:pathData="M100,56 C86,52 80,36 87,24 C92,16 108,16 113,24 C120,36 114,52 100,56 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear"
+                    android:startX="80" android:startY="16" android:endX="120" android:endY="56"
+                    android:startColor="@color/plant_bloom" android:endColor="@color/plant_bloom_core" />
+            </aapt:attr>
+        </path>
+    </group>
+    <group android:rotation="72" android:pivotX="100" android:pivotY="54">
+        <path android:pathData="M100,56 C86,52 80,36 87,24 C92,16 108,16 113,24 C120,36 114,52 100,56 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear"
+                    android:startX="80" android:startY="16" android:endX="120" android:endY="56"
+                    android:startColor="@color/plant_bloom" android:endColor="@color/plant_bloom_core" />
+            </aapt:attr>
+        </path>
+    </group>
+    <group android:rotation="144" android:pivotX="100" android:pivotY="54">
+        <path android:pathData="M100,56 C86,52 80,36 87,24 C92,16 108,16 113,24 C120,36 114,52 100,56 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear"
+                    android:startX="80" android:startY="16" android:endX="120" android:endY="56"
+                    android:startColor="@color/plant_bloom" android:endColor="@color/plant_bloom_core" />
+            </aapt:attr>
+        </path>
+    </group>
+    <group android:rotation="216" android:pivotX="100" android:pivotY="54">
+        <path android:pathData="M100,56 C86,52 80,36 87,24 C92,16 108,16 113,24 C120,36 114,52 100,56 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear"
+                    android:startX="80" android:startY="16" android:endX="120" android:endY="56"
+                    android:startColor="@color/plant_bloom" android:endColor="@color/plant_bloom_core" />
+            </aapt:attr>
+        </path>
+    </group>
+    <group android:rotation="288" android:pivotX="100" android:pivotY="54">
+        <path android:pathData="M100,56 C86,52 80,36 87,24 C92,16 108,16 113,24 C120,36 114,52 100,56 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear"
+                    android:startX="80" android:startY="16" android:endX="120" android:endY="56"
+                    android:startColor="@color/plant_bloom" android:endColor="@color/plant_bloom_core" />
+            </aapt:attr>
+        </path>
+    </group>
+
+    <!-- сердцевина -->
+    <path
+        android:pathData="M87,54 C87,46.82 92.82,41 100,41 C107.18,41 113,46.82 113,54 C113,61.18 107.18,67 100,67 C92.82,67 87,61.18 87,54 Z"
+        android:fillColor="@color/plant_bloom_core" />
+    <path
+        android:pathData="M93.5,54 C93.5,50.41 96.41,47.5 100,47.5 C103.59,47.5 106.5,50.41 106.5,54 C106.5,57.59 103.59,60.5 100,60.5 C96.41,60.5 93.5,57.59 93.5,54 Z"
+        android:fillColor="@color/plant_bloom"
+        android:fillAlpha="0.55" />
+
+    <path android:pathData="M97,156 C89,155 78,151 69,146"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+    <path android:pathData="M103,152 C110,146 120,142 130,141"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+    <path android:pathData="M97,122 C86,120 72,114 61,107"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+    <path android:pathData="M103,118 C112,109 125,103 137,103"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+</vector>

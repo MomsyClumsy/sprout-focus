@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="sprout_background">#11140F</color>
+
+    <!-- Растение в тёмной теме.
+         Зелень поднята на пару ступеней: на фоне #11140F светлая палитра
+         выглядит вялой. Земля тоже светлее — иначе холмик сливается с фоном.
+         Прожилка меняет знак: на осветлённом листе светлая линия пропадает,
+         а тёмная читается. -->
+    <color name="plant_leaf_light">#93CE90</color>
+    <color name="plant_leaf_dark">#4E9451</color>
+    <color name="plant_stem_light">#6BB46C</color>
+    <color name="plant_stem_dark">#4E9451</color>
+
+    <color name="plant_soil">#7C6650</color>
+    <color name="plant_soil_top">#9B8267</color>
+
+    <color name="plant_seed">#A08260</color>
+    <color name="plant_seed_hi">#BE9F75</color>
+
+    <color name="plant_bloom">#EFD98C</color>
+    <color name="plant_bloom_core">#CFA954</color>
+
+    <color name="plant_rib">#4D101410</color>
+
+    <color name="plant_shadow">#1A93CE90</color>
+</resources>

@@ -1,0 +1,253 @@
+package com.sprout.focus.ui
+
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.sprout.focus.R
+import com.sprout.focus.plan.OpenRequest
+import com.sprout.focus.ui.screens.AddTaskScreen
+import com.sprout.focus.ui.screens.CantStartScreen
+import com.sprout.focus.ui.screens.GardenScreen
+import com.sprout.focus.ui.screens.MeScreen
+import com.sprout.focus.ui.screens.SessionDoneScreen
+import com.sprout.focus.ui.screens.SessionScreen
+import com.sprout.focus.ui.screens.TasksScreen
+import com.sprout.focus.ui.screens.TodayScreen
+
+private const val TODAY = "today"
+private const val TASKS = "tasks"
+private const val GARDEN = "garden"
+private const val ME = "me"
+private const val ADD = "add"
+private const val SESSION = "session"
+private const val SESSION_DONE = "session_done"
+private const val CANT_START = "cant_start"
+
+private data class Tab(
+    val route: String,
+    @param:DrawableRes val icon: Int,
+    val label: String
+)
+
+// Иконки контурные, монохромные — цвет берут из темы.
+// Солнце, росток и диаграмма живут в одном визуальном мире.
+private val tabs = listOf(
+    Tab(TODAY, R.drawable.ic_tab_today, "Сегодня"),
+    Tab(TASKS, R.drawable.ic_tab_tasks, "Задачи"),
+    Tab(GARDEN, R.drawable.ic_tab_garden, "Сад"),
+    Tab(ME, R.drawable.ic_tab_me, "Я"),
+)
+
+private val fullScreenRoutes = setOf(ADD, SESSION, SESSION_DONE, CANT_START)
+
+@Composable
+fun SproutApp(
+    opening: OpenRequest? = null,
+    onOpeningHandled: () -> Unit = {},
+    vm: SproutViewModel = viewModel(factory = SproutViewModel.Factory),
+) {
+    val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route ?: TODAY
+
+    val tasks by vm.activeTasks.collectAsState()
+    val currentTask by vm.currentTask.collectAsState()
+    val session by vm.activeSession.collectAsState()
+    val now by vm.now.collectAsState()
+    val garden by vm.garden.collectAsState()
+    val grownCount by vm.grownCount.collectAsState()
+
+    // Дошла ли сессия до конца или её остановили раньше — нужно экрану итога
+    var finishedNaturally by remember { mutableStateOf(false) }
+
+    // Уведомления нужны для обратного отсчёта в шторке и сигнала об окончании
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val launcher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { }
+        LaunchedEffect(Unit) { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }
+    }
+
+    // Пришли по напоминанию. Ждём, пока задача станет текущей: иначе
+    // разговор «не могу начать» откроется про другую задачу.
+    LaunchedEffect(opening) {
+        val request = opening ?: return@LaunchedEffect
+        vm.openFromReminder(request.target, request.taskId).join()
+        if (request.target == OpenRequest.TARGET_CANT_START) {
+            navController.navigate(CANT_START)
+        } else {
+            navController.popBackStack(TODAY, false)
+        }
+        onOpeningHandled()
+    }
+
+    // Сессия появилась (в том числе после перезапуска приложения) — показываем её
+    LaunchedEffect(session?.id) {
+        val s = session
+        if (s != null && currentRoute != SESSION && currentRoute != SESSION_DONE) {
+            navController.navigate(SESSION)
+        }
+    }
+
+    Scaffold(
+        bottomBar = {
+            if (currentRoute !in fullScreenRoutes) {
+                NavigationBar {
+                    tabs.forEach { tab ->
+                        NavigationBarItem(
+                            selected = currentRoute == tab.route,
+                            onClick = {
+                                if (currentRoute != tab.route) {
+                                    navController.navigate(tab.route) {
+                                        popUpTo(navController.graph.startDestinationId) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            },
+                            icon = {
+                                Icon(painterResource(tab.icon), contentDescription = null)
+                            },
+                            label = { Text(tab.label) }
+                        )
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = TODAY,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable(TODAY) {
+                TodayScreen(
+                    currentTask = currentTask,
+                    hasOtherTasks = tasks.any { !it.isCurrent },
+                    stage = garden?.stage ?: 0,
+                    streak = garden?.streak ?: 0,
+                    onAddTask = { navController.navigate(ADD) },
+                    onPickTask = { navController.navigate(TASKS) },
+                    onStart = { mode, planned ->
+                        finishedNaturally = false
+                        vm.startSession(mode, planned)
+                    },
+                    onCantStart = { navController.navigate(CANT_START) },
+                )
+            }
+            composable(TASKS) {
+                TasksScreen(
+                    tasks = tasks,
+                    onAddTask = { navController.navigate(ADD) },
+                    onMakeCurrent = { vm.makeCurrent(it) },
+                    onComplete = { vm.complete(it) },
+                    onDrop = { vm.drop(it) },
+                    onSavePlan = { id, ifTrigger, thenAction, minute, mask ->
+                        vm.savePlan(id, ifTrigger, thenAction, minute, mask)
+                    },
+                )
+            }
+            composable(GARDEN) { GardenScreen(garden, grownCount) }
+            composable(ME) { MeScreen() }
+
+            composable(ADD) {
+                AddTaskScreen(
+                    onSave = { draft ->
+                        vm.addTask(draft)
+                        navController.popBackStack()
+                    },
+                    onCancel = { navController.popBackStack() }
+                )
+            }
+
+            composable(CANT_START) {
+                // Любой исход возвращает на «Сегодня»: если запустилась сессия,
+                // экран сессии откроется сам по появлению активной сессии.
+                val back = { navController.popBackStack(TODAY, false); Unit }
+                CantStartScreen(
+                    postponeCount = currentTask?.postponeCount ?: 0,
+                    onPicked = { vm.recordCantStart(it) },
+                    onStartSession = { reason, resolution, mode, seconds ->
+                        finishedNaturally = false
+                        vm.resolveAndStart(reason, resolution, mode, seconds)
+                        back()
+                    },
+                    onSplit = { reason, step ->
+                        finishedNaturally = false
+                        vm.splitAndStart(reason, step)
+                        back()
+                    },
+                    onFoundMeaning = { reason, why ->
+                        finishedNaturally = false
+                        vm.saveMeaningAndStart(reason, why)
+                        back()
+                    },
+                    onDrop = { vm.dropFromCantStart(it); back() },
+                    onPostpone = { vm.postponeFromCantStart(it); back() },
+                    onClose = back,
+                )
+            }
+
+            composable(SESSION) {
+                val s = session
+                if (s == null) {
+                    LaunchedEffect(Unit) { navController.popBackStack(TODAY, false) }
+                } else {
+                    SessionScreen(
+                        session = s,
+                        now = now,
+                        taskTitle = currentTask?.title.orEmpty(),
+                        firstStep = currentTask?.firstStep.orEmpty(),
+                        onPause = { vm.pauseSession() },
+                        onResume = { vm.resumeSession() },
+                        onFinish = {
+                            finishedNaturally = false
+                            navController.navigate(SESSION_DONE)
+                        },
+                        onTimeUp = {
+                            finishedNaturally = true
+                            navController.navigate(SESSION_DONE)
+                        }
+                    )
+                }
+            }
+
+            composable(SESSION_DONE) {
+                val s = session
+                val minutes = s?.elapsedSeconds(now)?.div(60) ?: 0
+                SessionDoneScreen(
+                    minutes = minutes,
+                    completed = finishedNaturally,
+                    onSave = { rating, interruptions, note ->
+                        vm.finishSession(finishedNaturally, rating, interruptions, note)
+                        navController.popBackStack(TODAY, false)
+                    }
+                )
+            }
+        }
+    }
+}

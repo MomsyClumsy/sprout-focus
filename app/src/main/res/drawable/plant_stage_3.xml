@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Стадия 3: растение. Три пары листьев и завязавшийся бутон.
+
+    Пары идут не только по размеру, но и по развороту: нижняя прижата
+    к стеблю, верхняя раскрыта шире. Растение тянется вверх, а не
+    расширяется равномерно.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <path
+        android:pathData="M34,182 C34,177.03 63.55,173 100,173 C136.45,173 166,177.03 166,182 C166,186.97 136.45,191 100,191 C63.55,191 34,186.97 34,182 Z"
+        android:fillColor="@color/plant_shadow" />
+
+    <path
+        android:pathData="M38,177 C38,171.48 65.76,167 100,167 C134.24,167 162,171.48 162,177 C162,182.52 134.24,187 100,187 C65.76,187 38,182.52 38,177 Z"
+        android:fillColor="@color/plant_soil" />
+    <path
+        android:pathData="M50,174 C50,170.14 72.38,167 100,167 C127.62,167 150,170.14 150,174 C150,177.86 127.62,181 100,181 C72.38,181 50,177.86 50,174 Z"
+        android:fillColor="@color/plant_soil_top" />
+
+    <path android:pathData="M93.5,175 C92.5,145 95,106 96,66 L104,66 C105,106 107.5,145 106.5,175 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="92" android:startY="122"
+                android:endX="108" android:endY="122"
+                android:startColor="@color/plant_stem_light"
+                android:endColor="@color/plant_stem_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- нижняя пара -->
+    <path android:pathData="M97,158 C87,163 72,158 65,146 C76,139 92,144 97,158 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="65" android:startY="139" android:endX="97" android:endY="163"
+                android:startColor="@color/plant_leaf_light" android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M103,154 C110,141 124,135 135,141 C131,154 115,160 103,154 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="103" android:startY="135" android:endX="135" android:endY="160"
+                android:startColor="@color/plant_leaf_light" android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- средняя пара -->
+    <path android:pathData="M97,128 C84,133 66,126 57,110 C72,101 90,109 97,128 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="57" android:startY="101" android:endX="97" android:endY="133"
+                android:startColor="@color/plant_leaf_light" android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M103,124 C111,107 129,99 143,107 C137,124 118,131 103,124 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="103" android:startY="99" android:endX="143" android:endY="131"
+                android:startColor="@color/plant_leaf_light" android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- верхняя пара -->
+    <path android:pathData="M97,96 C81,99 60,89 51,70 C69,61 90,73 97,96 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="51" android:startY="61" android:endX="97" android:endY="99"
+                android:startColor="@color/plant_leaf_light" android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M103,92 C113,71 134,62 151,71 C144,91 121,100 103,92 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="103" android:startY="62" android:endX="151" android:endY="100"
+                android:startColor="@color/plant_leaf_light" android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+
+    <!-- Бутон. Макушка скруглена, а не заострена: с острым кончиком он
+         читался просто как ещё один лист, торчащий вверх.
+         Чашелистики снизу дочитывают форму — это завязь, а не лист. -->
+    <path android:pathData="M100,32 C106,32 112,40 113,50 C114,61 108,73 100,73 C92,73 86,61 87,50 C88,40 94,32 100,32 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="85" android:startY="32" android:endX="115" android:endY="73"
+                android:startColor="@color/plant_leaf_light" android:endColor="@color/plant_leaf_dark" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M100,70 C95,73 88,72 84,67 C89,63 96,64 100,70 Z"
+        android:fillColor="@color/plant_leaf_dark" />
+    <path android:pathData="M100,70 C105,73 112,72 116,67 C111,63 104,64 100,70 Z"
+        android:fillColor="@color/plant_leaf_dark" />
+
+    <path android:pathData="M97,156 C89,155 78,151 69,146"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+    <path android:pathData="M103,152 C110,146 120,142 130,141"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+    <path android:pathData="M97,126 C86,124 72,118 61,111"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+    <path android:pathData="M103,122 C112,113 125,107 137,107"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+    <path android:pathData="M97,94 C84,90 68,81 56,71"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+    <path android:pathData="M103,90 C114,79 130,71 145,71"
+        android:strokeColor="@color/plant_rib" android:strokeWidth="1.6" android:strokeLineCap="round" />
+</vector>
