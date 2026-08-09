@@ -9,6 +9,8 @@ import com.sprout.focus.SproutApplication
 import com.sprout.focus.data.CantStartResolution
 import com.sprout.focus.data.Garden
 import com.sprout.focus.data.GardenRepository
+import com.sprout.focus.data.InsightsRepository
+import com.sprout.focus.data.MeState
 import com.sprout.focus.data.PlanRepository
 import com.sprout.focus.data.Session
 import com.sprout.focus.data.SessionRepository
@@ -28,6 +30,7 @@ class SproutViewModel(
     private val sessions: SessionRepository,
     private val plans: PlanRepository,
     gardenRepo: GardenRepository,
+    insights: InsightsRepository,
 ) : ViewModel() {
 
     init {
@@ -44,6 +47,13 @@ class SproutViewModel(
 
     val grownCount: StateFlow<Int> = gardenRepo.grownCount
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /**
+     * Экран «Я». Пересчитывается только пока на него смотрят: наблюдения
+     * никому не нужны в фоне, а запросов за ними идёт сразу пять.
+     */
+    val me: StateFlow<MeState> = insights.state()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MeState())
 
     val activeTasks: StateFlow<List<Task>> = repo.activeTasks
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -176,7 +186,9 @@ class SproutViewModel(
             initializer {
                 val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]
                         as SproutApplication
-                SproutViewModel(app.repository, app.sessions, app.plans, app.garden)
+                SproutViewModel(
+                    app.repository, app.sessions, app.plans, app.garden, app.insights
+                )
             }
         }
     }

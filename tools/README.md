@@ -44,3 +44,25 @@ $adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 ```
 
 Приложение при этом лучше погасить: пока оно держит базу, запись упрётся в `database is locked`, а правки снаружи Room всё равно не увидит до перезапуска.
+
+**Кавычки внутри такой команды съедаются шеллом устройства.** `where type='task_postponed'` доедет как `where type=task_postponed`, и sqlite отругается на несуществующую колонку. Для запросов со строками и для всего кириллического — файлом:
+
+```powershell
+$sql = "select count(*) from events where type='task_postponed';"
+[System.IO.File]::WriteAllText("$env:TEMP\q.sql", $sql, (New-Object System.Text.UTF8Encoding($false)))
+& $adb push "$env:TEMP\q.sql" /data/local/tmp/q.sql
+& $adb shell "cat /data/local/tmp/q.sql | run-as com.sprout.focus sqlite3 databases/sprout.db"
+```
+
+## Демо-история для проверки экрана «Я»
+
+Наблюдения показываются только при достаточном объёме данных, поэтому на живой базе первых дней проверять там нечего.
+
+```powershell
+.\tools\seed-history.ps1            # месяц правдоподобных данных
+.\tools\seed-history.ps1 -Restore   # вернуть базу, какой она была
+```
+
+Перед записью снимается копия в `tools\sprout-before-seed.db` — скрипт дописывает в ту же базу, где лежат настоящие задачи, а восстановить их неоткуда.
+
+Проверять экран стоит **на обоих** состояниях. На подложенной истории он выглядел безупречно; настоящая бедная база тут же показала «2 раз из 5» без склонения и вывод, сделанный из двух случаев.

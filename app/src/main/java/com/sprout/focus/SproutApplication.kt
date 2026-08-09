@@ -2,6 +2,7 @@ package com.sprout.focus
 
 import android.app.Application
 import com.sprout.focus.data.GardenRepository
+import com.sprout.focus.data.InsightsRepository
 import com.sprout.focus.data.PlanRepository
 import com.sprout.focus.data.SessionRepository
 import com.sprout.focus.data.SproutDatabase
@@ -20,6 +21,7 @@ class SproutApplication : Application() {
     val garden by lazy { GardenRepository(database.dao()) }
     val sessions by lazy { SessionRepository(database.dao(), this, garden) }
     val plans by lazy { PlanRepository(database.dao(), this) }
+    val insights by lazy { InsightsRepository(database.dao()) }
 
     override fun onCreate() {
         super.onCreate()

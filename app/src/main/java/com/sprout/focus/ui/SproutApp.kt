@@ -78,6 +78,7 @@ fun SproutApp(
     val now by vm.now.collectAsState()
     val garden by vm.garden.collectAsState()
     val grownCount by vm.grownCount.collectAsState()
+    val me by vm.me.collectAsState()
 
     // Дошла ли сессия до конца или её остановили раньше — нужно экрану итога
     var finishedNaturally by remember { mutableStateOf(false) }
@@ -172,7 +173,7 @@ fun SproutApp(
                 )
             }
             composable(GARDEN) { GardenScreen(garden, grownCount) }
-            composable(ME) { MeScreen() }
+            composable(ME) { MeScreen(me) }
 
             composable(ADD) {
                 AddTaskScreen(

@@ -48,3 +48,25 @@ object EventType {
     const val REMINDER_ACCEPTED = "reminder_accepted"
     const val REMINDER_DISMISSED = "reminder_dismissed"
 }
+
+/**
+ * Достать поле из payload.
+ *
+ * Payload — маленький плоский JSON, который мы же и собираем. Читать его
+ * разбором строки, а не `json_extract` в запросе: минимальная поддерживаемая
+ * версия Android — восьмая, а в её системном SQLite функций JSON может
+ * не быть вовсе. Тащить ради одного поля библиотеку тоже не за чем.
+ */
+object Payload {
+
+    /** Значение строкового поля: `{"reason":"anxiety"}` → `anxiety`. */
+    fun string(payload: String, key: String): String? {
+        val marker = "\"$key\":\""
+        val from = payload.indexOf(marker)
+        if (from < 0) return null
+        val start = from + marker.length
+        val end = payload.indexOf('"', start)
+        if (end < 0) return null
+        return payload.substring(start, end)
+    }
+}

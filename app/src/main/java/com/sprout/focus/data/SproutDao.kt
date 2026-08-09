@@ -98,4 +98,31 @@ interface SproutDao {
 
     @Query("SELECT COUNT(*) FROM grown_plants")
     fun observeGrownCount(): Flow<Int>
+
+    // --- аналитика ---
+    //
+    // Всё за окно наблюдения и всё через Flow: экран «Я» должен меняться
+    // сразу после сессии, а не при следующем запуске. Room сам пришлёт
+    // новое значение, когда в таблицу что-то допишут.
+
+    @Query("SELECT * FROM events WHERE type = :type AND at >= :since ORDER BY at")
+    fun observeEventsOfType(type: String, since: Long): Flow<List<Event>>
+
+    @Query("SELECT * FROM sessions WHERE endedAt IS NOT NULL AND startedAt >= :since ORDER BY startedAt")
+    fun observeFinishedSessions(since: Long): Flow<List<Session>>
+
+    /**
+     * Сколько всего минут фокуса за окно.
+     *
+     * Считаем по actualSeconds, а не по плану: интересно отработанное время,
+     * а не намерение. У брошенных сессий оно тоже записано.
+     */
+    @Query(
+        "SELECT COALESCE(SUM(actualSeconds), 0) / 60 FROM sessions " +
+            "WHERE endedAt IS NOT NULL AND startedAt >= :since"
+    )
+    fun observeFocusMinutes(since: Long): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM events WHERE type = :type AND at >= :since")
+    fun observeEventCount(type: String, since: Long): Flow<Int>
 }
