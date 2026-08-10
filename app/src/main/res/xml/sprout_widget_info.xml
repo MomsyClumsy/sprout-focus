@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Описание виджета для системы.
+
+    Размеры заданы в dp и в ячейках сразу: minWidth/minHeight читают старые
+    лаунчеры, targetCellWidth/Height — Android 12 и новее. Два столбца
+    на две строки: меньше не поместится название задачи с кнопкой.
+
+    updatePeriodMillis = 0 намеренно. Периодическое обновление здесь не нужно:
+    виджет перерисовывается тогда, когда меняется то, что на нём написано,
+    и приложение просит об этом само. Регулярный опрос вхолостую тратил бы
+    батарею, а система всё равно не даёт чаще получаса.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minWidth="180dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
+    android:previewLayout="@layout/widget_preview"
+    android:previewImage="@mipmap/ic_launcher"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

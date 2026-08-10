@@ -60,6 +60,20 @@
             android:name=".plan.PlanActionReceiver"
             android:exported="false" />
 
+        <!-- Виджет на домашний экран. exported обязателен: рисует его
+             лаунчер, то есть чужой процесс. -->
+        <receiver
+            android:name=".widget.SproutWidgetReceiver"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sprout_widget_info" />
+        </receiver>
+
         <!-- Расставить будильники заново. exported обязателен: события
              шлёт система, а не приложение. -->
         <receiver

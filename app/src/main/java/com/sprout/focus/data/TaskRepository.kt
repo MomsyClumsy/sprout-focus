@@ -1,6 +1,13 @@
 package com.sprout.focus.data
 
-class TaskRepository(private val dao: SproutDao) {
+import android.content.Context
+import com.sprout.focus.widget.SproutWidget
+
+/**
+ * [context] нужен ровно за одним: попросить виджет перерисоваться.
+ * Виджет показывает текущую задачу, а меняется она здесь.
+ */
+class TaskRepository(private val dao: SproutDao, private val context: Context) {
 
     val activeTasks = dao.observeActiveTasks()
     val currentTask = dao.observeCurrentTask()
@@ -32,6 +39,7 @@ class TaskRepository(private val dao: SproutDao) {
     suspend fun makeCurrent(id: Long) {
         dao.makeCurrent(id)
         dao.insertEvent(Event(type = EventType.TASK_SELECTED, taskId = id))
+        SproutWidget.refresh(context)
     }
 
     suspend fun complete(id: Long) {
@@ -107,7 +115,13 @@ class TaskRepository(private val dao: SproutDao) {
     private suspend fun promoteNextIfNeeded() {
         if (dao.countCurrent() > 0) return
         // Берём самую свежую из оставшихся, чтобы экран «Сегодня» не опустел
-        val next = dao.newestActiveTask() ?: return
+        val next = dao.newestActiveTask()
+        if (next == null) {
+            // Задач не осталось — виджету тоже надо об этом узнать,
+            // иначе он продолжит предлагать начать завершённую задачу
+            SproutWidget.refresh(context)
+            return
+        }
         makeCurrent(next.id)
     }
 }

@@ -12,6 +12,7 @@ navigation = "2.9.8"
 room = "2.8.4"
 ksp = "2.3.11"
 junit = "4.13.2"
+glance = "1.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -36,6 +37,11 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 
 # Тесты на JVM: ими проверяется расчётная часть, которая не знает про Android
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+
+# Glance — виджеты на домашний экран. Пишутся почти как Compose, но рисует их
+# чужой процесс (лаунчер), поэтому набор элементов свой и урезанный.
+androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
+androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

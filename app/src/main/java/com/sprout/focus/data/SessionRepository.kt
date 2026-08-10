@@ -3,6 +3,7 @@ package com.sprout.focus.data
 import android.content.Context
 import com.sprout.focus.timer.FocusAlarm
 import com.sprout.focus.timer.FocusNotifications
+import com.sprout.focus.widget.SproutWidget
 
 class SessionRepository(
     private val dao: SproutDao,
@@ -36,6 +37,7 @@ class SessionRepository(
         val endsAt = if (plannedSeconds > 0) now + plannedSeconds * 1000L else null
         if (endsAt != null) FocusAlarm.schedule(context, endsAt)
         FocusNotifications.showRunning(context, task?.title ?: "Фокус", endsAt, now)
+        SproutWidget.refresh(context)
     }
 
     suspend fun pause() {
@@ -46,6 +48,7 @@ class SessionRepository(
         dao.insertEvent(Event(type = EventType.SESSION_PAUSED, taskId = s.taskId, at = now))
         FocusAlarm.cancel(context)
         FocusNotifications.cancelRunning(context)
+        SproutWidget.refresh(context)
     }
 
     suspend fun resume(taskTitle: String) {
@@ -60,6 +63,7 @@ class SessionRepository(
         val endsAt = updated.endsAt(now)
         if (endsAt != null) FocusAlarm.schedule(context, endsAt)
         FocusNotifications.showRunning(context, taskTitle, endsAt, updated.startedAt)
+        SproutWidget.refresh(context)
     }
 
     /** Завершение с отметкой. [completed] — дошла до конца или остановила раньше. */
@@ -115,6 +119,7 @@ class SessionRepository(
 
         FocusAlarm.cancel(context)
         FocusNotifications.cancelAll(context)
+        SproutWidget.refresh(context)
     }
 
     private fun sessionPayload(id: Long, mode: String, planned: Int) =

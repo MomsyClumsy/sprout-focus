@@ -10,7 +10,12 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val LightColors = lightColorScheme(
+/**
+ * Схемы не приватные: ту же палитру берёт виджет на домашнем экране.
+ * Лаунчер про тему приложения ничего не знает, и без явно заданных цветов
+ * виджет ушёл бы в сиреневые умолчания Material.
+ */
+val SproutLightColors = lightColorScheme(
     primary = LightPrimary,
     onPrimary = LightOnPrimary,
     primaryContainer = LightPrimaryContainer,
@@ -40,7 +45,7 @@ private val LightColors = lightColorScheme(
     surfaceTint = LightPrimary,
 )
 
-private val DarkColors = darkColorScheme(
+val SproutDarkColors = darkColorScheme(
     primary = DarkPrimary,
     onPrimary = DarkOnPrimary,
     primaryContainer = DarkPrimaryContainer,
@@ -87,8 +92,8 @@ fun SproutTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColors
-        else -> LightColors
+        darkTheme -> SproutDarkColors
+        else -> SproutLightColors
     }
 
     MaterialTheme(

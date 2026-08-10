@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Как виджет выглядит в списке лаунчера.
+
+    Разметка, а не Glance: превью показывается до того, как виджет добавлен,
+    и рисовать его некому. Раньше здесь стояла иконка приложения — по ней
+    невозможно понять, что это вообще за виджет и зачем он.
+
+    Текст намеренно похож на настоящую задачу, а не «Заголовок»: человек
+    выбирает виджет по тому, что на нём написано.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_preview_bg"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/widget_preview_task"
+        android:textColor="@color/widget_preview_text"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="@string/widget_preview_step"
+        android:textColor="@color/widget_preview_subtext"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/widget_preview_button"
+        android:gravity="center"
+        android:paddingVertical="10dp"
+        android:text="@string/widget_preview_button"
+        android:textColor="@color/widget_preview_button_text"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

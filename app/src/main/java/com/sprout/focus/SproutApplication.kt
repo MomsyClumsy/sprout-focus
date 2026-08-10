@@ -17,7 +17,7 @@ import com.sprout.focus.timer.FocusNotifications
  */
 class SproutApplication : Application() {
     val database by lazy { SproutDatabase.build(this) }
-    val repository by lazy { TaskRepository(database.dao()) }
+    val repository by lazy { TaskRepository(database.dao(), this) }
     val garden by lazy { GardenRepository(database.dao()) }
     val sessions by lazy { SessionRepository(database.dao(), this, garden) }
     val plans by lazy { PlanRepository(database.dao(), this) }

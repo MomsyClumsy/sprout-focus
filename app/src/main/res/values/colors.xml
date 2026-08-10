@@ -3,6 +3,16 @@
     <color name="sprout_background">#F7FBF2</color>
     <color name="ic_launcher_background">#BFF0BC</color>
 
+    <!-- Превью виджета в списке лаунчера. Значения повторяют роли
+         secondaryContainer / primary / onPrimary из темы: превью рисуется
+         обычной разметкой, до Compose, и до палитры приложения не дотянется.
+         Ночной вариант — в values-night. -->
+    <color name="widget_preview_bg">#D5E8CF</color>
+    <color name="widget_preview_text">#101F10</color>
+    <color name="widget_preview_subtext">#424940</color>
+    <color name="widget_preview_button">#3D6B3D</color>
+    <color name="widget_preview_button_text">#FFFFFF</color>
+
     <!-- Растение.
          Вынесены в ресурсы, а не зашиты в vector-файлы, потому что земля
          и стебель обязаны меняться вместе с темой: коричневый #5A4632

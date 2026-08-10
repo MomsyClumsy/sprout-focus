@@ -20,6 +20,10 @@ interface SproutDao {
     @Query("SELECT COUNT(*) FROM tasks WHERE isCurrent = 1 AND status = 'active'")
     suspend fun countCurrent(): Int
 
+    /** То же самое разово — виджету, который живёт в чужом процессе и не подписывается. */
+    @Query("SELECT * FROM tasks WHERE isCurrent = 1 AND status = 'active' LIMIT 1")
+    suspend fun getCurrentTask(): Task?
+
     @Query("SELECT * FROM tasks WHERE id = :id")
     suspend fun getTask(id: Long): Task?
 

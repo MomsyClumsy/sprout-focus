@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Sprout</string>
+    <!-- Показывается в списке виджетов лаунчера -->
+    <string name="widget_description">Текущая задача и кнопка начать, не открывая приложение</string>
+
+    <!-- Тексты на превью виджета в списке лаунчера -->
+    <string name="widget_preview_task">Дописать главу</string>
+    <string name="widget_preview_step">Открыть файл и перечитать абзац</string>
+    <string name="widget_preview_button">20 минут</string>
 </resources>
