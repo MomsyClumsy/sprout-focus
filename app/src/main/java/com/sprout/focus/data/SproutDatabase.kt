@@ -8,8 +8,11 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Task::class, Event::class, Session::class, Garden::class, GrownPlant::class],
-    version = 5,
+    entities = [
+        Task::class, Event::class, Session::class, Garden::class, GrownPlant::class,
+        BlockedApp::class,
+    ],
+    version = 6,
     exportSchema = false
 )
 abstract class SproutDatabase : RoomDatabase() {
@@ -34,6 +37,24 @@ abstract class SproutDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Список отвлекающих приложений.
+         *
+         * Схема таблицы должна совпасть с тем, что Room ждёт от [BlockedApp],
+         * вплоть до NOT NULL: иначе приложение упадёт на старте с жалобой
+         * на расхождение — что и правильно, тихое расхождение хуже.
+         */
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS blocked_apps (" +
+                        "packageName TEXT NOT NULL PRIMARY KEY, " +
+                        "label TEXT NOT NULL, " +
+                        "addedAt INTEGER NOT NULL)"
+                )
+            }
+        }
+
         fun build(context: Context): SproutDatabase =
             Room.databaseBuilder(
                 context.applicationContext,
@@ -43,7 +64,7 @@ abstract class SproutDatabase : RoomDatabase() {
                 // fallbackToDestructiveMigration намеренно убран.
                 // Пропущенная миграция теперь роняет приложение на старте —
                 // это заметно сразу, в отличие от тихо стёртых данных.
-                .addMigrations(MIGRATION_4_5)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
                 .build()
     }
 }

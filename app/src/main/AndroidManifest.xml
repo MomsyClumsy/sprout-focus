@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Обратный отсчёт в шторке и сигнал об окончании сессии -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -21,6 +22,31 @@
          а приложение, которое обещало напомнить и не напомнило,
          теряет доверие один раз и насовсем. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Барьер отвлечений (этап 7).
+         Оба разрешения особые: диалогом их не выдают, человек включает их
+         руками в настройках системы, и приложение работает без них.
+
+         PACKAGE_USAGE_STATS показывает только, какое приложение открыто.
+         AccessibilityService дал бы то же самое проще — и заодно доступ
+         ко всему содержимому чужих экранов. Приложение про доверие
+         не может просить право читать переписку. -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <!-- Чтобы показать список установленных приложений и дать выбрать
+         отвлекающие. Спрашиваем только те, у которых есть значок
+         в лаунчере, — этого хватает, и QUERY_ALL_PACKAGES не нужен. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
 
     <application
         android:name=".SproutApplication"
@@ -59,6 +85,19 @@
         <receiver
             android:name=".plan.PlanActionReceiver"
             android:exported="false" />
+
+        <!-- Сторож отвлечений. Живёт только пока идёт сессия и только если
+             барьер включён. Тип specialUse: узнать, какое приложение открыто
+             сейчас, можно лишь опросом из живого процесса — под остальные
+             типы это не подходит. -->
+        <service
+            android:name=".focusguard.GuardService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Отслеживание отвлекающих приложений во время фокус-сессии" />
+        </service>
 
         <!-- Виджет на домашний экран. exported обязателен: рисует его
              лаунчер, то есть чужой процесс. -->

@@ -13,6 +13,14 @@
     <color name="widget_preview_button">#3D6B3D</color>
     <color name="widget_preview_button_text">#FFFFFF</color>
 
+    <!-- Барьер поверх отвлекающего приложения. Фон непрозрачный: полупрозрачный
+         оставлял бы ленту видимой, а именно её и надо перестать смотреть. -->
+    <color name="barrier_bg">#F7FBF2</color>
+    <color name="barrier_text">#191D17</color>
+    <color name="barrier_subtext">#424940</color>
+    <color name="barrier_button">#3D6B3D</color>
+    <color name="barrier_button_text">#FFFFFF</color>
+
     <!-- Растение.
          Вынесены в ресурсы, а не зашиты в vector-файлы, потому что земля
          и стебель обязаны меняться вместе с темой: коричневый #5A4632

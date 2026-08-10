@@ -8,4 +8,9 @@
     <string name="widget_preview_task">Дописать главу</string>
     <string name="widget_preview_step">Открыть файл и перечитать абзац</string>
     <string name="widget_preview_button">20 минут</string>
+
+    <!-- Барьер. Ни «ты обещала», ни «опять» — приложение здесь только
+         напоминает, за чем человек сел, и не ставит это в вину. -->
+    <string name="barrier_return">Вернуться к работе</string>
+    <string name="barrier_pass">Мне правда нужно · 2 минуты</string>
 </resources>

@@ -64,6 +64,23 @@ object FocusNotifications {
      * а она обновляет цифры без нашего участия. Ни таймеров, ни сервисов.
      */
     fun showRunning(context: Context, taskTitle: String, endsAt: Long?, startedAt: Long) {
+        notify(context, ID_RUNNING, buildRunning(context, taskTitle, endsAt, startedAt))
+    }
+
+    /**
+     * То же уведомление, но собранное отдельно.
+     *
+     * Его же показывает сторож отвлечений: foreground service обязан иметь
+     * уведомление, а два одинаковых в шторке — шум. Поэтому сервис берёт
+     * это и тот же [ID_RUNNING], и в шторке остаётся одна строка
+     * с обратным отсчётом.
+     */
+    fun buildRunning(
+        context: Context,
+        taskTitle: String,
+        endsAt: Long?,
+        startedAt: Long,
+    ): android.app.Notification {
         val builder = NotificationCompat.Builder(context, CHANNEL_RUNNING)
             .setSmallIcon(R.drawable.ic_tab_garden)
             .setContentTitle(taskTitle.ifBlank { "Фокус" })
@@ -81,7 +98,7 @@ object FocusNotifications {
             builder.setWhen(startedAt)   // режимы без плана — считаем вверх
         }
 
-        notify(context, ID_RUNNING, builder.build())
+        return builder.build()
     }
 
     fun showFinished(context: Context) {

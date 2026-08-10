@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Барьер, который появляется поверх отвлекающего приложения.
+
+    Обычная разметка, а не Compose: окно рисуется из сервиса, у которого
+    нет ни активности, ни владельца жизненного цикла, — Compose там
+    заводится дорого и хрупко.
+
+    Экран занимает всё, но ничего не запрещает: обе кнопки ведут дальше.
+    Жёсткой блокировки без root на Android не бывает, а имитация её —
+    это способ дать человеку почувствовать, что он и барьер обошёл,
+    и всё равно виноват.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/barrier_bg"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="32dp">
+
+    <ImageView
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:contentDescription="@null"
+        android:src="@drawable/plant_stage_2" />
+
+    <TextView
+        android:id="@+id/barrier_task"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:textColor="@color/barrier_text"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/barrier_until"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:textColor="@color/barrier_subtext"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/barrier_return"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:background="@drawable/barrier_button"
+        android:gravity="center"
+        android:paddingVertical="14dp"
+        android:text="@string/barrier_return"
+        android:textColor="@color/barrier_button_text"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/barrier_pass"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:paddingVertical="14dp"
+        android:text="@string/barrier_pass"
+        android:textColor="@color/barrier_subtext"
+        android:textSize="15sp" />
+
+</LinearLayout>

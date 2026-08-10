@@ -1,6 +1,8 @@
 package com.sprout.focus.data
 
 import android.content.Context
+import com.sprout.focus.focusguard.FocusGuard
+import com.sprout.focus.focusguard.GuardService
 import com.sprout.focus.timer.FocusAlarm
 import com.sprout.focus.timer.FocusNotifications
 import com.sprout.focus.widget.SproutWidget
@@ -9,6 +11,7 @@ class SessionRepository(
     private val dao: SproutDao,
     private val context: Context,
     private val garden: GardenRepository,
+    private val guard: GuardRepository,
 ) {
     val activeSession = dao.observeActiveSession()
 
@@ -36,9 +39,26 @@ class SessionRepository(
 
         val endsAt = if (plannedSeconds > 0) now + plannedSeconds * 1000L else null
         if (endsAt != null) FocusAlarm.schedule(context, endsAt)
-        FocusNotifications.showRunning(context, task?.title ?: "Фокус", endsAt, now)
+
+        // Сторож показывает то же самое уведомление, поэтому либо он, либо мы —
+        // иначе в шторке останется вторая строка после его остановки.
+        if (guardWanted()) {
+            GuardService.start(context, task?.title ?: "Фокус", endsAt, now)
+        } else {
+            FocusNotifications.showRunning(context, task?.title ?: "Фокус", endsAt, now)
+        }
         SproutWidget.refresh(context)
     }
+
+    /**
+     * Стоит ли поднимать сторожа.
+     *
+     * Три условия сразу: барьер включён, разрешения выданы, список не пуст.
+     * Сервис без списка — это foreground service, который ничего не делает,
+     * и уведомление, за которым ничего не стоит.
+     */
+    private suspend fun guardWanted(): Boolean =
+        guard.enabled && FocusGuard.ready(context) && guard.blockedPackages().isNotEmpty()
 
     suspend fun pause() {
         val s = dao.getActiveSession() ?: return
@@ -47,6 +67,9 @@ class SessionRepository(
         dao.updateSession(s.copy(pausedAt = now))
         dao.insertEvent(Event(type = EventType.SESSION_PAUSED, taskId = s.taskId, at = now))
         FocusAlarm.cancel(context)
+        // Сначала сторож: он владеет уведомлением сессии, и снимать его
+        // до остановки сервиса бесполезно — система покажет снова
+        GuardService.stop(context)
         FocusNotifications.cancelRunning(context)
         SproutWidget.refresh(context)
     }
@@ -62,7 +85,11 @@ class SessionRepository(
 
         val endsAt = updated.endsAt(now)
         if (endsAt != null) FocusAlarm.schedule(context, endsAt)
-        FocusNotifications.showRunning(context, taskTitle, endsAt, updated.startedAt)
+        if (guardWanted()) {
+            GuardService.start(context, taskTitle, endsAt, updated.startedAt)
+        } else {
+            FocusNotifications.showRunning(context, taskTitle, endsAt, updated.startedAt)
+        }
         SproutWidget.refresh(context)
     }
 
@@ -118,6 +145,7 @@ class SessionRepository(
         garden.onSessionFinished(actual)
 
         FocusAlarm.cancel(context)
+        GuardService.stop(context)
         FocusNotifications.cancelAll(context)
         SproutWidget.refresh(context)
     }

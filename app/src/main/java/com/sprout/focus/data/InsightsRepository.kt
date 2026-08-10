@@ -12,6 +12,13 @@ data class Totals(
     val tasksCreated: Int = 0,
     val tasksCompleted: Int = 0,
     val postponed: Int = 0,
+    /**
+     * Барьер отвлечений. Показывается только если он вообще срабатывал:
+     * строчка «Отвлечений поймано: 0» у человека без барьера — это упрёк
+     * за то, чего он не включал.
+     */
+    val distractionsCaught: Int = 0,
+    val distractionsReturned: Int = 0,
 )
 
 /** Всё содержимое экрана «Я» одним снимком. */
@@ -45,13 +52,22 @@ class InsightsRepository(private val dao: SproutDao) {
 
         val sessions = dao.observeFinishedSessions(since)
 
+        val counts = combine(
+            dao.observeEventCount(EventType.TASK_CREATED, since),
+            dao.observeEventCount(EventType.TASK_COMPLETED, since),
+            dao.observeEventCount(EventType.DISTRACTION_CAUGHT, since),
+            dao.observeEventCount(EventType.DISTRACTION_RETURNED, since),
+        ) { created, completedTasks, caught, returned ->
+            listOf(created, completedTasks, caught, returned)
+        }
+
         return combine(
             postpones,
             sessions,
             dao.observeFocusMinutes(since),
-            dao.observeEventCount(EventType.TASK_CREATED, since),
-            dao.observeEventCount(EventType.TASK_COMPLETED, since),
-        ) { reasons, finished, minutes, created, completedTasks ->
+            counts,
+        ) { reasons, finished, minutes, byType ->
+            val (created, completedTasks, caught, returned) = byType
             val outcomes = finished.map {
                 Insights.SessionOutcome(it.plannedSeconds, it.completed)
             }
@@ -64,6 +80,8 @@ class InsightsRepository(private val dao: SproutDao) {
                     tasksCreated = created,
                     tasksCompleted = completedTasks,
                     postponed = reasons.size,
+                    distractionsCaught = caught,
+                    distractionsReturned = returned,
                 ),
             )
         }

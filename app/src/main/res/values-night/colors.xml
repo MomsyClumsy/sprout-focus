@@ -9,6 +9,13 @@
     <color name="widget_preview_button">#A4D4A2</color>
     <color name="widget_preview_button_text">#0B3911</color>
 
+    <!-- Барьер, тёмная тема -->
+    <color name="barrier_bg">#11140F</color>
+    <color name="barrier_text">#E1E4DB</color>
+    <color name="barrier_subtext">#C2C9BD</color>
+    <color name="barrier_button">#A4D4A2</color>
+    <color name="barrier_button_text">#0B3911</color>
+
     <!-- Растение в тёмной теме.
          Зелень поднята на пару ступеней: на фоне #11140F светлая палитра
          выглядит вялой. Земля тоже светлее — иначе холмик сливается с фоном.

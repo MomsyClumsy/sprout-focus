@@ -42,6 +42,18 @@ object EventType {
      * этап затевался. Без FIRED невозможно посчитать, сколько раз
      * напоминание прошло мимо: молчание в базе неотличимо от неслучившегося.
      */
+    /**
+     * Отвлечение во время сессии.
+     *
+     * CAUGHT пишется в момент, когда барьер показан, — то есть каждый раз,
+     * когда рука сама открыла ленту. Ответ пишется отдельно: «вернулась»
+     * и «прошла мимо барьера» — это разные вещи, и разница между ними
+     * покажет, работает ли мягкий барьер вообще.
+     */
+    const val DISTRACTION_CAUGHT = "distraction_caught"
+    const val DISTRACTION_RETURNED = "distraction_returned"
+    const val DISTRACTION_PASSED = "distraction_passed"
+
     const val REMINDER_SET = "reminder_set"
     const val REMINDER_CLEARED = "reminder_cleared"
     const val REMINDER_FIRED = "reminder_fired"

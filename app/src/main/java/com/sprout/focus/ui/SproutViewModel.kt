@@ -1,5 +1,6 @@
 package com.sprout.focus.ui
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -9,7 +10,9 @@ import com.sprout.focus.SproutApplication
 import com.sprout.focus.data.CantStartResolution
 import com.sprout.focus.data.Garden
 import com.sprout.focus.data.GardenRepository
+import com.sprout.focus.data.GuardRepository
 import com.sprout.focus.data.InsightsRepository
+import com.sprout.focus.data.InstalledApp
 import com.sprout.focus.data.MeState
 import com.sprout.focus.data.PlanRepository
 import com.sprout.focus.data.Session
@@ -17,20 +20,26 @@ import com.sprout.focus.data.SessionRepository
 import com.sprout.focus.data.Task
 import com.sprout.focus.data.TaskDraft
 import com.sprout.focus.data.TaskRepository
+import com.sprout.focus.focusguard.FocusGuard
 import com.sprout.focus.plan.OpenRequest
+import com.sprout.focus.ui.screens.GuardUiState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SproutViewModel(
+    private val app: Application,
     private val repo: TaskRepository,
     private val sessions: SessionRepository,
     private val plans: PlanRepository,
     gardenRepo: GardenRepository,
     insights: InsightsRepository,
+    private val guard: GuardRepository,
 ) : ViewModel() {
 
     init {
@@ -137,6 +146,49 @@ class SproutViewModel(
         }
     }
 
+    // --- барьер отвлечений ---
+
+    /**
+     * Состояние экрана настроек барьера.
+     *
+     * Разрешения не наблюдаются: их выдают в настройках системы, снаружи
+     * приложения, и узнать об этом можно только спросив заново. Поэтому
+     * экран перечитывает их при каждом возвращении — см. [refreshGuard].
+     */
+    private val _guard = MutableStateFlow(GuardUiState())
+    val guardState: StateFlow<GuardUiState> = _guard
+
+    init {
+        viewModelScope.launch {
+            guard.blockedApps.collect { list ->
+                _guard.update { it.copy(blocked = list.map { app -> app.packageName }.toSet()) }
+            }
+        }
+    }
+
+    fun refreshGuard() = viewModelScope.launch {
+        _guard.update {
+            it.copy(
+                enabled = guard.enabled,
+                hasUsageAccess = FocusGuard.hasUsageAccess(app),
+                canDrawOverlay = FocusGuard.canDrawOverlay(app),
+                // Список приложений спрашиваем один раз: он меняется редко,
+                // а обход установленных пакетов заметно не бесплатный
+                apps = it.apps.ifEmpty { guard.installedApps() },
+            )
+        }
+    }
+
+    fun setGuardEnabled(value: Boolean) {
+        guard.enabled = value
+        _guard.update { it.copy(enabled = value) }
+        refreshGuard()
+    }
+
+    fun toggleBlockedApp(installed: InstalledApp, blocked: Boolean) = viewModelScope.launch {
+        if (blocked) guard.add(installed) else guard.remove(installed.packageName)
+    }
+
     // --- планы «если — то» ---
 
     fun savePlan(
@@ -187,7 +239,8 @@ class SproutViewModel(
                 val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]
                         as SproutApplication
                 SproutViewModel(
-                    app.repository, app.sessions, app.plans, app.garden, app.insights
+                    app, app.repository, app.sessions, app.plans,
+                    app.garden, app.insights, app.guard,
                 )
             }
         }

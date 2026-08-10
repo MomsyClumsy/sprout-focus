@@ -42,7 +42,7 @@ import com.sprout.focus.ui.theme.SproutTheme
  * что с тобой происходит, — на плохой неделе оно нужнее.
  */
 @Composable
-fun MeScreen(state: MeState) {
+fun MeScreen(state: MeState, onOpenGuard: () -> Unit = {}) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -62,6 +62,17 @@ fun MeScreen(state: MeState) {
 
         Spacer(Modifier.height(12.dp))
         AllNumbers(state.totals)
+
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "Барьер отвлечений →",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpenGuard)
+                .padding(vertical = 12.dp)
+        )
         Spacer(Modifier.height(24.dp))
     }
 }
@@ -160,6 +171,18 @@ private fun AllNumbers(totals: Totals) {
                     NumberRow("Задач создано", totals.tasksCreated.toString())
                     NumberRow("Задач завершено", totals.tasksCompleted.toString())
                     NumberRow("Отложено раз", totals.postponed.toString())
+
+                    // Барьер показываем, только если он срабатывал: строка
+                    // «Отвлечений поймано: 0» у человека без барьера —
+                    // это упрёк за то, чего он не включал
+                    if (totals.distractionsCaught > 0) {
+                        HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                        NumberRow("Барьер сработал", totals.distractionsCaught.toString())
+                        NumberRow(
+                            "Из них вернулась к работе",
+                            "${totals.distractionsReturned} из ${totals.distractionsCaught}"
+                        )
+                    }
                 }
             }
         }

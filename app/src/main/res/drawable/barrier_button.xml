@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Кнопка «Вернуться к работе» на барьере -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/barrier_button" />
+    <corners android:radius="24dp" />
+</shape>

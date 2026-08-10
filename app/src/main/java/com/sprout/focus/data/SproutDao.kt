@@ -129,4 +129,19 @@ interface SproutDao {
 
     @Query("SELECT COUNT(*) FROM events WHERE type = :type AND at >= :since")
     fun observeEventCount(type: String, since: Long): Flow<Int>
+
+    // --- отвлекающие приложения ---
+
+    @Query("SELECT * FROM blocked_apps ORDER BY label")
+    fun observeBlockedApps(): Flow<List<BlockedApp>>
+
+    /** Разово — сторожу, который живёт в сервисе и подписываться не может. */
+    @Query("SELECT packageName FROM blocked_apps")
+    suspend fun blockedPackages(): List<String>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addBlockedApp(app: BlockedApp)
+
+    @Query("DELETE FROM blocked_apps WHERE packageName = :packageName")
+    suspend fun removeBlockedApp(packageName: String)
 }

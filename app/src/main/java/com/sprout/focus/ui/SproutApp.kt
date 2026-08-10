@@ -12,6 +12,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -19,17 +20,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sprout.focus.R
+import com.sprout.focus.focusguard.FocusGuard
 import com.sprout.focus.plan.OpenRequest
 import com.sprout.focus.ui.screens.AddTaskScreen
 import com.sprout.focus.ui.screens.CantStartScreen
 import com.sprout.focus.ui.screens.GardenScreen
+import com.sprout.focus.ui.screens.GuardScreen
 import com.sprout.focus.ui.screens.MeScreen
 import com.sprout.focus.ui.screens.SessionDoneScreen
 import com.sprout.focus.ui.screens.SessionScreen
@@ -44,6 +51,7 @@ private const val ADD = "add"
 private const val SESSION = "session"
 private const val SESSION_DONE = "session_done"
 private const val CANT_START = "cant_start"
+private const val GUARD = "guard"
 
 private data class Tab(
     val route: String,
@@ -68,6 +76,7 @@ fun SproutApp(
     onOpeningHandled: () -> Unit = {},
     vm: SproutViewModel = viewModel(factory = SproutViewModel.Factory),
 ) {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: TODAY
@@ -173,7 +182,35 @@ fun SproutApp(
                 )
             }
             composable(GARDEN) { GardenScreen(garden, grownCount) }
-            composable(ME) { MeScreen(me) }
+            composable(ME) {
+                MeScreen(me, onOpenGuard = { navController.navigate(GUARD) })
+            }
+
+            composable(GUARD) {
+                val guard by vm.guardState.collectAsState()
+
+                // Разрешения выдаются в настройках системы, снаружи приложения,
+                // и уведомить нас об этом некому — спросить можно только заново.
+                // Причём именно на возвращении: заход на экран случается один
+                // раз, а из настроек человек приходит обратно в тот же самый,
+                // и экран так и остался бы с просьбой выдать уже выданное.
+                val lifecycleOwner = LocalLifecycleOwner.current
+                DisposableEffect(lifecycleOwner) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) vm.refreshGuard()
+                    }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                }
+                GuardScreen(
+                    state = guard,
+                    onToggle = { vm.setGuardEnabled(it) },
+                    onGrantUsage = { FocusGuard.openUsageAccessSettings(context) },
+                    onGrantOverlay = { FocusGuard.openOverlaySettings(context) },
+                    onToggleApp = { app, checked -> vm.toggleBlockedApp(app, checked) },
+                    onBack = { navController.popBackStack() },
+                )
+            }
 
             composable(ADD) {
                 AddTaskScreen(
