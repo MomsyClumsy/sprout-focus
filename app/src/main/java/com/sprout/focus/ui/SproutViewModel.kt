@@ -9,6 +9,9 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sprout.focus.SproutApplication
 import com.sprout.focus.data.CantStartResolution
 import com.sprout.focus.data.Garden
+import com.sprout.focus.data.ExperimentRepository
+import com.sprout.focus.data.ExperimentState
+import com.sprout.focus.data.Experiments
 import com.sprout.focus.data.GardenRepository
 import com.sprout.focus.data.GuardRepository
 import com.sprout.focus.data.InsightsRepository
@@ -29,6 +32,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -41,6 +45,7 @@ class SproutViewModel(
     gardenRepo: GardenRepository,
     insights: InsightsRepository,
     private val guard: GuardRepository,
+    private val experiments: ExperimentRepository,
 ) : ViewModel() {
 
     init {
@@ -219,6 +224,38 @@ class SproutViewModel(
         if (blocked) guard.add(installed) else guard.remove(installed.packageName)
     }
 
+    // --- эксперименты над собой ---
+
+    /**
+     * Что идёт или что можно предложить.
+     *
+     * Как и наблюдения, считается только пока на него смотрят: выбор
+     * гипотезы перебирает месяц сессий и задач, а в фоне он никому не нужен.
+     */
+    val experiment: StateFlow<ExperimentState> = experiments.state()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExperimentState())
+
+    /**
+     * Как эксперимент меняет поведение приложения.
+     *
+     * Отдельно от [experiment]: этим двум флагам нужен идущий эксперимент
+     * и больше ничего, а экраны «Сегодня» и «Новая задача» не должны
+     * тянуть за собой пересчёт гипотез.
+     */
+    val shortSessionsOnly: StateFlow<Boolean> = experiments.running
+        .map { it?.hypothesis == Experiments.SHORTER }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    val planRequired: StateFlow<Boolean> = experiments.running
+        .map { it?.hypothesis == Experiments.IF_THEN }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun startExperiment(hypothesis: String) = viewModelScope.launch {
+        experiments.start(hypothesis)
+    }
+
+    fun stopExperiment() = viewModelScope.launch { experiments.stop() }
+
     // --- планы «если — то» ---
 
     fun savePlan(
@@ -270,7 +307,7 @@ class SproutViewModel(
                         as SproutApplication
                 SproutViewModel(
                     app, app.repository, app.sessions, app.plans,
-                    app.garden, app.insights, app.guard,
+                    app.garden, app.insights, app.guard, app.experiments,
                 )
             }
         }

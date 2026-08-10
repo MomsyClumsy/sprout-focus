@@ -54,6 +54,17 @@ object EventType {
     const val DISTRACTION_RETURNED = "distraction_returned"
     const val DISTRACTION_PASSED = "distraction_passed"
 
+    /**
+     * Эксперименты над собой.
+     *
+     * Само состояние живёт в таблице `experiments` — это единственное, что
+     * не выводится из событий. Но начало и конец пишутся и сюда: иначе
+     * прошлое приложения будет объяснимо только наполовину, а вопрос
+     * «а не в эксперименте ли дело?» встанет к любой цифре задним числом.
+     */
+    const val EXPERIMENT_STARTED = "experiment_started"
+    const val EXPERIMENT_ENDED = "experiment_ended"
+
     const val REMINDER_SET = "reminder_set"
     const val REMINDER_CLEARED = "reminder_cleared"
     const val REMINDER_FIRED = "reminder_fired"

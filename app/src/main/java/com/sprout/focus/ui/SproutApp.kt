@@ -36,6 +36,7 @@ import com.sprout.focus.focusguard.QuietMode
 import com.sprout.focus.plan.OpenRequest
 import com.sprout.focus.ui.screens.AddTaskScreen
 import com.sprout.focus.ui.screens.CantStartScreen
+import com.sprout.focus.ui.screens.ExperimentScreen
 import com.sprout.focus.ui.screens.GardenScreen
 import com.sprout.focus.ui.screens.GuardScreen
 import com.sprout.focus.ui.screens.MeScreen
@@ -53,6 +54,7 @@ private const val SESSION = "session"
 private const val SESSION_DONE = "session_done"
 private const val CANT_START = "cant_start"
 private const val GUARD = "guard"
+private const val EXPERIMENT = "experiment"
 
 private data class Tab(
     val route: String,
@@ -89,6 +91,9 @@ fun SproutApp(
     val garden by vm.garden.collectAsState()
     val grownCount by vm.grownCount.collectAsState()
     val me by vm.me.collectAsState()
+    val experiment by vm.experiment.collectAsState()
+    val shortOnly by vm.shortSessionsOnly.collectAsState()
+    val planRequired by vm.planRequired.collectAsState()
 
     // Дошла ли сессия до конца или её остановили раньше — нужно экрану итога
     var finishedNaturally by remember { mutableStateOf(false) }
@@ -168,6 +173,7 @@ fun SproutApp(
                         vm.startSession(mode, planned)
                     },
                     onCantStart = { navController.navigate(CANT_START) },
+                    shortOnly = shortOnly,
                 )
             }
             composable(TASKS) {
@@ -184,7 +190,21 @@ fun SproutApp(
             }
             composable(GARDEN) { GardenScreen(garden, grownCount) }
             composable(ME) {
-                MeScreen(me, onOpenGuard = { navController.navigate(GUARD) })
+                MeScreen(
+                    state = me,
+                    onOpenGuard = { navController.navigate(GUARD) },
+                    experiment = experiment,
+                    onOpenExperiment = { navController.navigate(EXPERIMENT) },
+                )
+            }
+
+            composable(EXPERIMENT) {
+                ExperimentScreen(
+                    state = experiment,
+                    onStart = { vm.startExperiment(it) },
+                    onStop = { vm.stopExperiment() },
+                    onBack = { navController.popBackStack() },
+                )
             }
 
             composable(GUARD) {
@@ -221,7 +241,8 @@ fun SproutApp(
                         vm.addTask(draft)
                         navController.popBackStack()
                     },
-                    onCancel = { navController.popBackStack() }
+                    onCancel = { navController.popBackStack() },
+                    planRequired = planRequired,
                 )
             }
 

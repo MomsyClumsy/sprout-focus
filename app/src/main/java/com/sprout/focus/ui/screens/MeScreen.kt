@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sprout.focus.data.CantStartReason
+import com.sprout.focus.data.ExperimentState
 import com.sprout.focus.data.Insights
 import com.sprout.focus.data.MeState
 import com.sprout.focus.data.Totals
@@ -42,7 +43,12 @@ import com.sprout.focus.ui.theme.SproutTheme
  * что с тобой происходит, — на плохой неделе оно нужнее.
  */
 @Composable
-fun MeScreen(state: MeState, onOpenGuard: () -> Unit = {}) {
+fun MeScreen(
+    state: MeState,
+    onOpenGuard: () -> Unit = {},
+    experiment: ExperimentState = ExperimentState(),
+    onOpenExperiment: () -> Unit = {},
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -53,7 +59,15 @@ fun MeScreen(state: MeState, onOpenGuard: () -> Unit = {}) {
         Text("Я", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(16.dp))
 
-        if (state.cards.isEmpty()) EmptyNote() else {
+        // Эксперимент идёт первым: он про сейчас, а наблюдения — про прошлое.
+        // Но появляется он только когда есть что сказать, поэтому пустой
+        // экран остаётся пустым и здесь ничего не занимает.
+        if (experiment.hasSomethingToShow) {
+            ExperimentCard(experiment, onOpenExperiment)
+            Spacer(Modifier.height(12.dp))
+        }
+
+        if (state.cards.isEmpty() && !experiment.hasSomethingToShow) EmptyNote() else {
             state.cards.forEach { card ->
                 InsightCard(card)
                 Spacer(Modifier.height(12.dp))

@@ -20,6 +20,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,6 +44,8 @@ fun TodayScreen(
     onPickTask: () -> Unit,
     onStart: (mode: String, plannedSeconds: Int) -> Unit,
     onCantStart: () -> Unit,
+    /** Идёт эксперимент про короткие заходы: длинные — на шаг дальше. */
+    shortOnly: Boolean = false,
 ) {
     Column(
         modifier = Modifier
@@ -55,7 +58,10 @@ fun TodayScreen(
 
         when {
             currentTask != null ->
-                CurrentTask(currentTask, stage, streak, onStart, onCantStart, onPickTask, hasOtherTasks)
+                CurrentTask(
+                    currentTask, stage, streak, onStart, onCantStart, onPickTask,
+                    hasOtherTasks, shortOnly,
+                )
             hasOtherTasks -> NothingChosen(stage, onPickTask)
             else -> Empty(onAddTask)
         }
@@ -88,6 +94,7 @@ private fun CurrentTask(
     onCantStart: () -> Unit,
     onPickTask: () -> Unit,
     hasOtherTasks: Boolean,
+    shortOnly: Boolean,
 ) {
     // 20 минут по умолчанию. Классические 25 в РКИ 2025 быстрее растили
     // усталость, а жёсткая структура сильнее роняла мотивацию, чем свобода.
@@ -146,15 +153,31 @@ private fun CurrentTask(
 
     // Выбор длины — рядом с кнопкой, а не в настройках.
     // Автономия в выборе сохраняет мотивацию лучше внешней структуры.
+    //
+    // Пока идёт эксперимент про короткие заходы, длинные убраны на один шаг
+    // дальше — но не убраны совсем. Это тот же мягкий барьер, что и у
+    // отвлечений: пройти можно всегда, просто перестаёт получаться на
+    // автопилоте. Запрет здесь дал бы не проверку гипотезы, а наказание
+    // за несогласие с ней.
+    var showAll by remember { mutableStateOf(false) }
+    val lengths = if (shortOnly && !showAll) listOf(15, 20, 25) else listOf(15, 20, 25, 45, 0)
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        listOf(15, 20, 25, 45, 0).forEach { m ->
+        lengths.forEach { m ->
             FilterChip(
                 selected = minutes == m,
                 onClick = { minutes = m },
                 label = { Text(if (m == 0) "Поток" else "$m") }
+            )
+        }
+        if (shortOnly && !showAll) {
+            FilterChip(
+                selected = false,
+                onClick = { showAll = true },
+                label = { Text("Ещё") }
             )
         }
     }

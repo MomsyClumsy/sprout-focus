@@ -10,9 +10,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [
         Task::class, Event::class, Session::class, Garden::class, GrownPlant::class,
-        BlockedApp::class,
+        BlockedApp::class, Experiment::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class SproutDatabase : RoomDatabase() {
@@ -55,6 +55,31 @@ abstract class SproutDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Эксперименты над собой.
+         *
+         * Единственная таблица с состоянием, которое не выводится из событий:
+         * приложение обещало неделю вести себя иначе, и обещание должно
+         * пережить перезапуск. Nullable-поля — те, что заполняются на финише.
+         */
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS experiments (" +
+                        "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                        "hypothesis TEXT NOT NULL, " +
+                        "startedAt INTEGER NOT NULL, " +
+                        "endsAt INTEGER NOT NULL, " +
+                        "baselinePercent INTEGER NOT NULL, " +
+                        "baselineCount INTEGER NOT NULL, " +
+                        "endedAt INTEGER, " +
+                        "outcome TEXT, " +
+                        "resultPercent INTEGER, " +
+                        "observations INTEGER)"
+                )
+            }
+        }
+
         fun build(context: Context): SproutDatabase =
             Room.databaseBuilder(
                 context.applicationContext,
@@ -64,7 +89,7 @@ abstract class SproutDatabase : RoomDatabase() {
                 // fallbackToDestructiveMigration намеренно убран.
                 // Пропущенная миграция теперь роняет приложение на старте —
                 // это заметно сразу, в отличие от тихо стёртых данных.
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .build()
     }
 }

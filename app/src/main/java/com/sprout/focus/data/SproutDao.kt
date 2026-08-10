@@ -144,4 +144,51 @@ interface SproutDao {
 
     @Query("DELETE FROM blocked_apps WHERE packageName = :packageName")
     suspend fun removeBlockedApp(packageName: String)
+
+    // --- эксперименты над собой ---
+
+    @Query("SELECT * FROM experiments WHERE endedAt IS NULL ORDER BY startedAt DESC LIMIT 1")
+    fun observeRunningExperiment(): Flow<Experiment?>
+
+    /**
+     * То же разово.
+     *
+     * Нужно там, где эксперимент меняет поведение приложения: заводя сессию
+     * из виджета или из уведомления, подписываться не на что.
+     */
+    @Query("SELECT * FROM experiments WHERE endedAt IS NULL ORDER BY startedAt DESC LIMIT 1")
+    suspend fun getRunningExperiment(): Experiment?
+
+    @Insert
+    suspend fun insertExperiment(experiment: Experiment): Long
+
+    @Update
+    suspend fun updateExperiment(experiment: Experiment)
+
+    /** Что уже проверялось: предлагать то же самое второй раз незачем. */
+    @Query("SELECT DISTINCT hypothesis FROM experiments")
+    suspend fun triedHypotheses(): List<String>
+
+    // --- то, из чего выбирается гипотеза и считается ход ---
+
+    @Query("SELECT * FROM sessions WHERE endedAt IS NOT NULL AND startedAt >= :since ORDER BY startedAt")
+    suspend fun finishedSessions(since: Long): List<Session>
+
+    @Query("SELECT * FROM tasks WHERE createdAt >= :since")
+    suspend fun tasksCreatedSince(since: Long): List<Task>
+
+    @Query("SELECT * FROM tasks WHERE createdAt >= :since")
+    fun observeTasksCreatedSince(since: Long): Flow<List<Task>>
+
+    /**
+     * За сколько из этих задач человек садился хотя бы раз.
+     *
+     * Именно «садился», а не «доделал»: гипотеза про план «если — то»
+     * проверяет начало, а не завершение — начать и есть самое трудное.
+     */
+    @Query(
+        "SELECT COUNT(DISTINCT s.taskId) FROM sessions s " +
+            "JOIN tasks t ON t.id = s.taskId WHERE t.createdAt >= :since"
+    )
+    suspend fun startedTaskCount(since: Long): Int
 }

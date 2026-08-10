@@ -36,6 +36,14 @@ import com.sprout.focus.data.TaskDraft
 fun AddTaskScreen(
     onSave: (TaskDraft) -> Unit,
     onCancel: () -> Unit,
+    /**
+     * Идёт эксперимент про план «если — то»: на эту неделю он обязателен.
+     *
+     * Это единственный случай, когда приложение просит заполнить лишнее
+     * поле, — и просит на неделю, чтобы проверить гипотезу на живых данных,
+     * а не потому, что так правильнее вообще.
+     */
+    planRequired: Boolean = false,
 ) {
     var title by remember { mutableStateOf("") }
     var firstStep by remember { mutableStateOf("") }
@@ -47,7 +55,8 @@ fun AddTaskScreen(
     var daysMask by remember { mutableIntStateOf(Reminder.ONE_OFF) }
     var extrasOpen by remember { mutableStateOf(false) }
 
-    val canSave = title.isNotBlank() && firstStep.isNotBlank()
+    val planFilled = ifTrigger.isNotBlank() && thenAction.isNotBlank()
+    val canSave = title.isNotBlank() && firstStep.isNotBlank() && (!planRequired || planFilled)
 
     Column(
         modifier = Modifier
@@ -83,7 +92,12 @@ fun AddTaskScreen(
         Text("Когда сделаешь первый шаг?", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(4.dp))
         Text(
-            "Необязательно, но задачи с таким планом начинают заметно чаще",
+            if (planRequired) {
+                "На эту неделю — обязательное поле: идёт эксперимент, который " +
+                    "как раз это и проверяет"
+            } else {
+                "Необязательно, но задачи с таким планом начинают заметно чаще"
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
