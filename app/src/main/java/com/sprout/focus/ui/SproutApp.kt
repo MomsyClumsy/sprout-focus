@@ -32,6 +32,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sprout.focus.R
 import com.sprout.focus.focusguard.FocusGuard
+import com.sprout.focus.focusguard.QuietMode
 import com.sprout.focus.plan.OpenRequest
 import com.sprout.focus.ui.screens.AddTaskScreen
 import com.sprout.focus.ui.screens.CantStartScreen
@@ -208,6 +209,8 @@ fun SproutApp(
                     onGrantUsage = { FocusGuard.openUsageAccessSettings(context) },
                     onGrantOverlay = { FocusGuard.openOverlaySettings(context) },
                     onToggleApp = { app, checked -> vm.toggleBlockedApp(app, checked) },
+                    onToggleQuiet = { vm.setQuietEnabled(it) },
+                    onGrantQuiet = { QuietMode.openPolicySettings(context) },
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -226,6 +229,14 @@ fun SproutApp(
                 // Любой исход возвращает на «Сегодня»: если запустилась сессия,
                 // экран сессии откроется сам по появлению активной сессии.
                 val back = { navController.popBackStack(TODAY, false); Unit }
+
+                // Ветка «Отвлекаюсь» говорит разное в зависимости от того,
+                // настроен барьер или нет. Разрешения могли выдать или отнять
+                // снаружи приложения, поэтому спрашиваем заново на каждом
+                // заходе — но без обхода установленных пакетов: он тут не нужен
+                val guard by vm.guardState.collectAsState()
+                LaunchedEffect(Unit) { vm.refreshGuardFlags() }
+
                 CantStartScreen(
                     postponeCount = currentTask?.postponeCount ?: 0,
                     onPicked = { vm.recordCantStart(it) },
@@ -247,6 +258,10 @@ fun SproutApp(
                     onDrop = { vm.dropFromCantStart(it); back() },
                     onPostpone = { vm.postponeFromCantStart(it); back() },
                     onClose = back,
+                    barrierReady = guard.barrierReady,
+                    // Настройки открываются поверх разговора, а не вместо него:
+                    // «Назад» возвращает в ту же ветку, из которой ушли
+                    onOpenGuard = { navController.navigate(GUARD) },
                 )
             }
 

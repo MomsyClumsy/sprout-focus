@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,8 +57,14 @@ fun CantStartScreen(
     onDrop: (reason: String) -> Unit,
     onPostpone: (reason: String) -> Unit,
     onClose: () -> Unit,
+    barrierReady: Boolean = false,
+    onOpenGuard: () -> Unit = {},
 ) {
-    var reason by remember { mutableStateOf<String?>(null) }
+    // rememberSaveable, а не remember: из ветки «Отвлекаюсь» человек уходит
+    // в настройки барьера, и обычное состояние по дороге теряется — «Назад»
+    // возвращал бы его к выбору причины, заставляя объясняться заново.
+    // Заодно переживает поворот экрана и смену темы.
+    var reason by rememberSaveable { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -81,6 +88,8 @@ fun CantStartScreen(
                 onFoundMeaning = onFoundMeaning,
                 onDrop = onDrop,
                 onPostpone = onPostpone,
+                barrierReady = barrierReady,
+                onOpenGuard = onOpenGuard,
             )
         }
 
@@ -169,6 +178,8 @@ private fun Response(
     onFoundMeaning: (String, String) -> Unit,
     onDrop: (String) -> Unit,
     onPostpone: (String) -> Unit,
+    barrierReady: Boolean,
+    onOpenGuard: () -> Unit,
 ) {
     when (reason) {
 
@@ -233,17 +244,41 @@ private fun Response(
             onBack = onBack
         )
 
-        CantStartReason.DISTRACTED -> Simple(
-            title = "Уберём отвлечения",
-            body = "Включи «Не беспокоить» и убери телефон из поля зрения — " +
-                    "чтобы отвлечься, должно потребоваться усилие.\n\n" +
-                    "Блокировка приложений появится на этапе 7.",
-            actionLabel = "Начать · 20 минут",
-            onAction = {
-                onStartSession(reason, CantStartResolution.STARTED_SMALLER, Session.MODE_POMODORO, 20 * 60)
-            },
-            onBack = onBack
-        )
+        // Единственная ветка, где ответ уже встроен в приложение. Если барьер
+        // настроен — про него говорится как про свершившийся факт, и человек
+        // сразу начинает. Если нет — начать всё равно можно первой кнопкой:
+        // настройки здесь предлагаются, но не встают на пути. Человек,
+        // который пришёл сюда, и так не может начать; отправить его вместо
+        // работы заполнять форму значит дать ему ещё один способ отложить.
+        CantStartReason.DISTRACTED -> if (barrierReady) {
+            Simple(
+                title = "Барьер уже включён",
+                body = "Как только начнётся сессия, Sprout остановит тебя " +
+                        "на выбранных приложениях и напомнит, за чем ты села.\n\n" +
+                        "Осталось убрать телефон из поля зрения — чтобы " +
+                        "отвлечься, должно потребоваться усилие.",
+                actionLabel = "Начать · 20 минут",
+                onAction = {
+                    onStartSession(reason, CantStartResolution.STARTED_SMALLER, Session.MODE_POMODORO, 20 * 60)
+                },
+                onBack = onBack
+            )
+        } else {
+            Simple(
+                title = "Уберём отвлечения",
+                body = "Убери телефон из поля зрения — чтобы отвлечься, должно " +
+                        "потребоваться усилие.\n\n" +
+                        "Sprout умеет останавливать тебя на приложениях, которые " +
+                        "уводят чаще всего. Пока барьер не настроен.",
+                actionLabel = "Начать · 20 минут",
+                onAction = {
+                    onStartSession(reason, CantStartResolution.STARTED_SMALLER, Session.MODE_POMODORO, 20 * 60)
+                },
+                secondaryLabel = "Настроить барьер",
+                onSecondary = onOpenGuard,
+                onBack = onBack
+            )
+        }
     }
 }
 

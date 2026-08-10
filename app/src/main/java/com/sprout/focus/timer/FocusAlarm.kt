@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import com.sprout.focus.focusguard.QuietMode
 
 /**
  * Будильник на момент окончания сессии.
@@ -53,6 +54,11 @@ object FocusAlarm {
 /** Срабатывает, когда сессия должна закончиться. */
 class SessionEndReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        // Тишину снимаем ПЕРЕД сигналом, а не после отметки на экране итога:
+        // время вышло — защищать больше нечего, а под «не беспокоить»
+        // приложение заглушило бы собственный сигнал об окончании
+        // и сессия кончилась бы в полном молчании.
+        QuietMode.leave(context)
         FocusNotifications.cancelRunning(context)
         FocusNotifications.showFinished(context)
     }

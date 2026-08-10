@@ -65,7 +65,7 @@ fun MeScreen(state: MeState, onOpenGuard: () -> Unit = {}) {
 
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "Барьер отвлечений →",
+            text = "Меньше отвлечений →",
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier

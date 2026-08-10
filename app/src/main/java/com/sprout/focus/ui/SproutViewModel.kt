@@ -21,6 +21,7 @@ import com.sprout.focus.data.Task
 import com.sprout.focus.data.TaskDraft
 import com.sprout.focus.data.TaskRepository
 import com.sprout.focus.focusguard.FocusGuard
+import com.sprout.focus.focusguard.QuietMode
 import com.sprout.focus.plan.OpenRequest
 import com.sprout.focus.ui.screens.GuardUiState
 import kotlinx.coroutines.delay
@@ -49,6 +50,11 @@ class SproutViewModel(
         // чем расставить всё заново при запуске — операция дешёвая,
         // а тихо пропавшее напоминание стоит доверия ко всему приложению.
         viewModelScope.launch { plans.rescheduleAll() }
+
+        // По той же причине: тишина, включённая нами и не снятая из-за
+        // потерянной сессии, иначе осталась бы навсегда — и молчащий
+        // телефон человек связал бы с чем угодно, только не со Sprout
+        viewModelScope.launch { sessions.syncQuiet() }
     }
 
     val garden: StateFlow<Garden?> = gardenRepo.garden
@@ -167,14 +173,29 @@ class SproutViewModel(
     }
 
     fun refreshGuard() = viewModelScope.launch {
+        refreshGuardFlags().join()
+        _guard.update {
+            // Список приложений спрашиваем один раз: он меняется редко,
+            // а обход установленных пакетов заметно не бесплатный
+            it.copy(apps = it.apps.ifEmpty { guard.installedApps() })
+        }
+    }
+
+    /**
+     * Только тумблеры и разрешения, без обхода установленных пакетов.
+     *
+     * Нужно там, где состояние барьера лишь показывают, а не настраивают, —
+     * на экране «не могу начать». Лезть в PackageManager в момент, когда
+     * человек и так не может начать, незачем.
+     */
+    fun refreshGuardFlags() = viewModelScope.launch {
         _guard.update {
             it.copy(
                 enabled = guard.enabled,
                 hasUsageAccess = FocusGuard.hasUsageAccess(app),
                 canDrawOverlay = FocusGuard.canDrawOverlay(app),
-                // Список приложений спрашиваем один раз: он меняется редко,
-                // а обход установленных пакетов заметно не бесплатный
-                apps = it.apps.ifEmpty { guard.installedApps() },
+                quietEnabled = guard.quietEnabled,
+                hasQuietAccess = QuietMode.hasPolicyAccess(app),
             )
         }
     }
@@ -183,6 +204,15 @@ class SproutViewModel(
         guard.enabled = value
         _guard.update { it.copy(enabled = value) }
         refreshGuard()
+    }
+
+    fun setQuietEnabled(value: Boolean) {
+        guard.quietEnabled = value
+        _guard.update { it.copy(quietEnabled = value) }
+        // Тумблер переключили посреди идущей сессии — реагируем сразу,
+        // а не с её концом: это прямая просьба, а не настройка на потом
+        viewModelScope.launch { sessions.syncQuiet() }
+        refreshGuardFlags()
     }
 
     fun toggleBlockedApp(installed: InstalledApp, blocked: Boolean) = viewModelScope.launch {

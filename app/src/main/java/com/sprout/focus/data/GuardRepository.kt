@@ -28,6 +28,17 @@ class GuardRepository(private val dao: SproutDao, private val context: Context) 
         get() = prefs.getBoolean(KEY_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_ENABLED, value).apply()
 
+    /**
+     * Включать ли «не беспокоить» на время сессии.
+     *
+     * Отдельный тумблер, а не часть барьера: барьер держит от ухода
+     * в телефон, тишина — от того, что телефон позовёт первым. Человеку
+     * может понадобиться одно без другого.
+     */
+    var quietEnabled: Boolean
+        get() = prefs.getBoolean(KEY_QUIET, false)
+        set(value) = prefs.edit().putBoolean(KEY_QUIET, value).apply()
+
     suspend fun blockedPackages(): Set<String> = dao.blockedPackages().toSet()
 
     suspend fun add(app: InstalledApp) =
@@ -79,5 +90,6 @@ class GuardRepository(private val dao: SproutDao, private val context: Context) 
 
     private companion object {
         const val KEY_ENABLED = "enabled"
+        const val KEY_QUIET = "quiet_enabled"
     }
 }

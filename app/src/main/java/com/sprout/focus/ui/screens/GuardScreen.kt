@@ -3,12 +3,14 @@ package com.sprout.focus.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
@@ -27,19 +29,35 @@ import androidx.compose.ui.unit.dp
 import com.sprout.focus.data.InstalledApp
 import com.sprout.focus.ui.theme.SproutTheme
 
-/** Всё, что экрану нужно знать о состоянии барьера. */
+/** Всё, что экрану нужно знать о состоянии барьера и тишины. */
 data class GuardUiState(
     val enabled: Boolean = false,
     val hasUsageAccess: Boolean = false,
     val canDrawOverlay: Boolean = false,
     val apps: List<InstalledApp> = emptyList(),
     val blocked: Set<String> = emptySet(),
-)
+    val quietEnabled: Boolean = false,
+    val hasQuietAccess: Boolean = false,
+) {
+    /**
+     * Барьер не просто включён, а действительно сработает.
+     *
+     * Включённый тумблер без разрешений или с пустым списком — это
+     * обещание, которого приложение не выполнит. Отличать одно от другого
+     * приходится и здесь, и на экране «не могу начать».
+     */
+    val barrierReady: Boolean
+        get() = enabled && hasUsageAccess && canDrawOverlay && blocked.isNotEmpty()
+}
 
 /**
- * Настройки барьера отвлечений.
+ * Что делать с отвлечениями: тишина и барьер.
  *
- * Экран построен как разговор, а не как форма: сначала честно сказано,
+ * Два разных приёма, поэтому два независимых тумблера. Тишина закрывает
+ * телефон, который зовёт первым; барьер — руку, которая сама тянется
+ * к ленте. Человеку может понадобиться одно без другого.
+ *
+ * Оба построены как разговор, а не как форма: сначала честно сказано,
  * что приложение будет делать и чего оно **не** делает, потом разрешения,
  * и только потом список. Человек, который включает слежение за собой,
  * имеет право сначала понять, за что расплачивается.
@@ -51,97 +69,163 @@ fun GuardScreen(
     onGrantUsage: () -> Unit,
     onGrantOverlay: () -> Unit,
     onToggleApp: (InstalledApp, Boolean) -> Unit,
+    onToggleQuiet: (Boolean) -> Unit,
+    onGrantQuiet: () -> Unit,
     onBack: () -> Unit,
 ) {
-    Column(Modifier.fillMaxSize()) {
-        Column(Modifier.padding(horizontal = 24.dp)) {
-            Spacer(Modifier.height(16.dp))
-            TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-                Text("← Назад")
-            }
-            Spacer(Modifier.height(8.dp))
-            Text("Барьер отвлечений", style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Пока идёт сессия, при открытии выбранных приложений Sprout покажет " +
-                    "экран с напоминанием, за чем ты села. Пройти можно всегда — " +
-                    "барьер нужен, чтобы это перестало происходить на автопилоте.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                "Sprout видит только название открытого приложения — не то, " +
-                    "что в нём происходит. Список никуда не отправляется.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    // Весь экран одним списком: шапка выросла до двух разделов, и на
+    // невысоком экране нижняя её часть иначе оказалась бы недосягаема
+    LazyColumn(Modifier.fillMaxSize()) {
+        item {
+            Column(Modifier.padding(horizontal = 24.dp)) {
+                Spacer(Modifier.height(16.dp))
+                TextButton(onClick = onBack, contentPadding = PaddingValues(0.dp)) {
+                    Text("← Назад")
+                }
+                Spacer(Modifier.height(8.dp))
+                Text("Меньше отвлечений", style = MaterialTheme.typography.headlineSmall)
 
-            Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(20.dp))
+                QuietSection(state, onToggleQuiet, onGrantQuiet)
 
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Включить барьер", style = MaterialTheme.typography.titleMedium)
-                Switch(checked = state.enabled, onCheckedChange = onToggle)
-            }
+                Spacer(Modifier.height(20.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(20.dp))
 
-            if (state.enabled) {
+                BarrierSection(state, onToggle, onGrantUsage, onGrantOverlay)
                 Spacer(Modifier.height(12.dp))
-                if (!state.hasUsageAccess) {
-                    PermissionCard(
-                        title = "Нужен доступ к статистике приложений",
-                        body = "Без него Sprout не знает, что открыто поверх него. " +
-                            "Система откроет общий список — найди в нём Sprout.",
-                        action = "Открыть настройки",
-                        onClick = onGrantUsage,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-                if (!state.canDrawOverlay) {
-                    PermissionCard(
-                        title = "Нужно разрешение рисовать поверх приложений",
-                        body = "Иначе барьер некуда показать.",
-                        action = "Открыть настройки",
-                        onClick = onGrantOverlay,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-                if (state.hasUsageAccess && state.canDrawOverlay) {
-                    Text(
-                        "Разрешения выданы. Отметь приложения, которые уводят тебя " +
-                            "чаще всего — обычно их два-три, а не двадцать.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
-            Spacer(Modifier.height(12.dp))
-            HorizontalDivider()
         }
 
         if (state.enabled && state.hasUsageAccess && state.canDrawOverlay) {
-            LazyColumn(Modifier.fillMaxSize()) {
-                items(state.apps, key = { it.packageName }) { app ->
-                    val checked = app.packageName in state.blocked
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { onToggleApp(app, !checked) }
-                            .padding(horizontal = 24.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(checked = checked, onCheckedChange = { onToggleApp(app, it) })
-                        Spacer(Modifier.height(0.dp))
-                        Text(app.label, style = MaterialTheme.typography.bodyLarge)
-                    }
+            items(state.apps, key = { it.packageName }) { app ->
+                val checked = app.packageName in state.blocked
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onToggleApp(app, !checked) }
+                        .padding(horizontal = 24.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = checked, onCheckedChange = { onToggleApp(app, it) })
+                    Spacer(Modifier.width(4.dp))
+                    Text(app.label, style = MaterialTheme.typography.bodyLarge)
                 }
-                item { Spacer(Modifier.height(24.dp)) }
             }
-        } else {
-            Spacer(Modifier.height(24.dp))
+        }
+
+        item { Spacer(Modifier.height(24.dp)) }
+    }
+}
+
+/**
+ * «Не беспокоить» на время сессии.
+ *
+ * Про режим сказано прямым текстом: глушим по системным правилам
+ * «приоритетных», а не наглухо. Человеку важно знать, что звонок,
+ * которого он ждёт, приложение у него не заберёт, — иначе тумблер
+ * не включают вовсе, и правильно делают.
+ */
+@Composable
+private fun QuietSection(
+    state: GuardUiState,
+    onToggle: (Boolean) -> Unit,
+    onGrant: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("«Не беспокоить» на время сессии", style = MaterialTheme.typography.titleMedium)
+        Switch(checked = state.quietEnabled, onCheckedChange = onToggle)
+    }
+    Spacer(Modifier.height(8.dp))
+    Text(
+        "Пока идёт сессия, телефон молчит и сам включается обратно, когда " +
+            "время выйдет. Проходят звонки от избранных и повторные — " +
+            "по тем правилам, что уже настроены у тебя в системе.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(
+        "Сигнал об окончании сессии слышно всегда. На паузе звук возвращается.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    if (state.quietEnabled && !state.hasQuietAccess) {
+        Spacer(Modifier.height(12.dp))
+        PermissionCard(
+            title = "Нужен доступ к режиму «не беспокоить»",
+            body = "Без него Sprout не может переключить звук. Система откроет " +
+                "общий список — найди в нём Sprout.",
+            action = "Открыть настройки",
+            onClick = onGrant,
+        )
+    }
+}
+
+@Composable
+private fun BarrierSection(
+    state: GuardUiState,
+    onToggle: (Boolean) -> Unit,
+    onGrantUsage: () -> Unit,
+    onGrantOverlay: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("Барьер отвлечений", style = MaterialTheme.typography.titleMedium)
+        Switch(checked = state.enabled, onCheckedChange = onToggle)
+    }
+    Spacer(Modifier.height(8.dp))
+    Text(
+        "Пока идёт сессия, при открытии выбранных приложений Sprout покажет " +
+            "экран с напоминанием, за чем ты села. Пройти можно всегда — " +
+            "барьер нужен, чтобы это перестало происходить на автопилоте.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(
+        "Sprout видит только название открытого приложения — не то, " +
+            "что в нём происходит. Список никуда не отправляется.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    if (state.enabled) {
+        Spacer(Modifier.height(12.dp))
+        if (!state.hasUsageAccess) {
+            PermissionCard(
+                title = "Нужен доступ к статистике приложений",
+                body = "Без него Sprout не знает, что открыто поверх него. " +
+                    "Система откроет общий список — найди в нём Sprout.",
+                action = "Открыть настройки",
+                onClick = onGrantUsage,
+            )
+            Spacer(Modifier.height(8.dp))
+        }
+        if (!state.canDrawOverlay) {
+            PermissionCard(
+                title = "Нужно разрешение рисовать поверх приложений",
+                body = "Иначе барьер некуда показать.",
+                action = "Открыть настройки",
+                onClick = onGrantOverlay,
+            )
+            Spacer(Modifier.height(8.dp))
+        }
+        if (state.hasUsageAccess && state.canDrawOverlay) {
+            Text(
+                "Разрешения выданы. Отметь приложения, которые уводят тебя " +
+                    "чаще всего — обычно их два-три, а не двадцать.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -174,21 +258,24 @@ private val sampleApps = listOf(
     InstalledApp("org.telegram.messenger", "Telegram"),
 )
 
-@Preview(name = "Барьер · выключен", showBackground = true)
+@Preview(name = "Отвлечения · всё выключено", showBackground = true)
 @Composable
 private fun GuardOff() = SproutTheme(darkTheme = false) {
-    GuardScreen(GuardUiState(), {}, {}, {}, { _, _ -> }, {})
+    GuardScreen(GuardUiState(), {}, {}, {}, { _, _ -> }, {}, {}, {})
 }
 
-@Preview(name = "Барьер · нет разрешений", showBackground = true)
+@Preview(name = "Отвлечения · нет разрешений", showBackground = true)
 @Composable
 private fun GuardNoPermissions() = SproutTheme(darkTheme = false) {
-    GuardScreen(GuardUiState(enabled = true), {}, {}, {}, { _, _ -> }, {})
+    GuardScreen(
+        GuardUiState(enabled = true, quietEnabled = true),
+        {}, {}, {}, { _, _ -> }, {}, {}, {},
+    )
 }
 
-@Preview(name = "Барьер · список", showBackground = true)
+@Preview(name = "Отвлечения · всё настроено", showBackground = true)
 @Composable
-private fun GuardList() = SproutTheme(darkTheme = false) {
+private fun GuardList() = SproutTheme(darkTheme = true) {
     GuardScreen(
         GuardUiState(
             enabled = true,
@@ -196,7 +283,9 @@ private fun GuardList() = SproutTheme(darkTheme = false) {
             canDrawOverlay = true,
             apps = sampleApps,
             blocked = setOf("com.instagram.android"),
+            quietEnabled = true,
+            hasQuietAccess = true,
         ),
-        {}, {}, {}, { _, _ -> }, {},
+        {}, {}, {}, { _, _ -> }, {}, {}, {},
     )
 }

@@ -3,6 +3,7 @@ package com.sprout.focus.data
 import android.content.Context
 import com.sprout.focus.focusguard.FocusGuard
 import com.sprout.focus.focusguard.GuardService
+import com.sprout.focus.focusguard.QuietMode
 import com.sprout.focus.timer.FocusAlarm
 import com.sprout.focus.timer.FocusNotifications
 import com.sprout.focus.widget.SproutWidget
@@ -47,6 +48,7 @@ class SessionRepository(
         } else {
             FocusNotifications.showRunning(context, task?.title ?: "Фокус", endsAt, now)
         }
+        if (guard.quietEnabled) QuietMode.enter(context)
         SproutWidget.refresh(context)
     }
 
@@ -71,6 +73,10 @@ class SessionRepository(
         // до остановки сервиса бесполезно — система покажет снова
         GuardService.stop(context)
         FocusNotifications.cancelRunning(context)
+        // Пауза — это перерыв, а не продолжение работы: держать телефон
+        // немым, пока человек занят чем-то другим, значит прятать от него
+        // то, что он в этот момент как раз может себе позволить услышать
+        QuietMode.leave(context)
         SproutWidget.refresh(context)
     }
 
@@ -90,6 +96,7 @@ class SessionRepository(
         } else {
             FocusNotifications.showRunning(context, taskTitle, endsAt, updated.startedAt)
         }
+        if (guard.quietEnabled) QuietMode.enter(context)
         SproutWidget.refresh(context)
     }
 
@@ -147,7 +154,29 @@ class SessionRepository(
         FocusAlarm.cancel(context)
         GuardService.stop(context)
         FocusNotifications.cancelAll(context)
+        QuietMode.leave(context)
         SproutWidget.refresh(context)
+    }
+
+    /**
+     * Привести тишину в соответствие с тем, что происходит.
+     *
+     * Нужно в двух случаях. Первый: тумблер переключили посреди сессии —
+     * ждать её конца значит не отреагировать на прямую просьбу. Второй,
+     * более важный: сессию можно потерять способами, на которые приложение
+     * не влияет — принудительная остановка, перезагрузка, экономия батареи.
+     * Тишину тогда снимать некому, и телефон останется немым молча
+     * и надолго. Поэтому то же самое делается при каждом запуске
+     * приложения — ровно как с будильниками и с виджетом: восстановление
+     * не должно зависеть от одного источника.
+     */
+    suspend fun syncQuiet() {
+        val active = dao.getActiveSession()
+        if (guard.quietEnabled && active != null && !active.isPaused) {
+            QuietMode.enter(context)
+        } else {
+            QuietMode.leave(context)
+        }
     }
 
     private fun sessionPayload(id: Long, mode: String, planned: Int) =

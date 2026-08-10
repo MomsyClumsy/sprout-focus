@@ -38,6 +38,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
+    <!-- «Не беспокоить» на время сессии. Тоже особое разрешение: объявления
+         в манифесте мало, доступ к политике уведомлений человек выдаёт
+         руками в настройках системы. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+
     <!-- Чтобы показать список установленных приложений и дать выбрать
          отвлекающие. Спрашиваем только те, у которых есть значок
          в лаунчере, — этого хватает, и QUERY_ALL_PACKAGES не нужен. -->
