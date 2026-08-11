@@ -1,3 +1,21 @@
+import java.util.Properties
+
+/**
+ * Ключ подписи выпуска.
+ *
+ * Лежит вне репозитория: в git не должно быть ни ключа, ни пароля к нему.
+ * Файла нет — релиз просто не подпишется этим ключом, и сборка об этом
+ * скажет прямо, а не соберёт молча что-то другое.
+ *
+ * Копия ключа и пароля — в OneDrive, папка «ключ-подписи». Потерянный ключ
+ * означает, что обновление не встанет поверх установленного приложения:
+ * человеку придётся удалить его вместе со всеми своими данными.
+ */
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
 plugins {
     // Плагин Kotlin отдельно не подключается: начиная с AGP 9
     // поддержка Kotlin встроена и включена по умолчанию.
@@ -14,19 +32,39 @@ android {
         applicationId = "com.sprout.focus"
         minSdk = 26          // Android 8 — покрывает почти все живые устройства
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1"
+        // versionCode растёт на единицу с каждым выпуском: по нему Android
+        // понимает, что новее. versionName — то, что видит человек
+        versionCode = 2
+        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val storePath = keystoreProperties.getProperty("storeFile")
+            if (storePath != null) {
+                storeFile = file(storePath)
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Сокращение кода выключено намеренно. Room и Glance работают
+            // через сгенерированные классы, и правила для R8 к ним пришлось бы
+            // подбирать; выигрыш в размере у приложения на пару мегабайт
+            // не стоит поломки, которая проявится только в релизной сборке —
+            // то есть у людей, а не здесь.
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

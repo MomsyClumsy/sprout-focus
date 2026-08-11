@@ -14,3 +14,8 @@ local.properties
 
 # снимок базы с устройства: личные данные, обновляется tools\pull-db.ps1
 /tools/*.db
+
+# ключ подписи и пароль к нему — не в git
+/keystore.properties
+*.jks
+*.keystore
