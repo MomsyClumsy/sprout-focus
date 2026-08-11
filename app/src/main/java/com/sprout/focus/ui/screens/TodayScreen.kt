@@ -69,7 +69,7 @@ fun TodayScreen(
             currentTask != null ->
                 CurrentTask(
                     currentTask, stage, streak, onStart, onCantStart, onPickTask,
-                    hasOtherTasks, shortOnly, onOpenTask, onAddTask,
+                    hasOtherTasks, shortOnly, onOpenTask,
                 )
             hasOtherTasks -> NothingChosen(stage, onPickTask, onAddTask)
             else -> Empty(onAddTask)
@@ -105,7 +105,6 @@ private fun CurrentTask(
     hasOtherTasks: Boolean,
     shortOnly: Boolean,
     onOpenTask: (Long) -> Unit,
-    onAddTask: () -> Unit,
 ) {
     // 20 минут по умолчанию. Классические 25 в РКИ 2025 быстрее растили
     // усталость, а жёсткая структура сильнее роняла мотивацию, чем свобода.
@@ -225,12 +224,11 @@ private fun CurrentTask(
         }
     }
 
-    // Задача приходит в голову не на вкладке со списком, а когда человек
-    // уже смотрит на главный экран. Отправлять его за ней на другую вкладку —
-    // лишний повод забыть, зачем шёл
-    TextButton(onClick = onAddTask) {
-        Text("Добавить задачу", color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
+    // Кнопки «Добавить задачу» здесь намеренно нет, хотя на соседних
+    // состояниях она есть. Экран собран вокруг одного действия — начать;
+    // завести новую задачу вместо текущей это самый приятный способ
+    // не начинать, и выглядит он как работа. Дверь с этого экрана
+    // одна и честная: «Не могу начать»
 }
 
 @Composable
