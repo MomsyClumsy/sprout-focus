@@ -137,10 +137,10 @@ private fun TaskRow(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (task.hasPlan) {
+            task.planLine?.let { plan ->
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Если ${task.ifTrigger}, то я ${task.thenAction}",
+                    plan,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

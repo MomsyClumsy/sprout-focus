@@ -34,27 +34,35 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.sprout.focus.data.Reminder
+import com.sprout.focus.data.Task
 import kotlinx.coroutines.delay
 
 /**
- * План «если — то» и напоминание к нему.
+ * Зацепка для первого шага и напоминание к ней.
  *
  * Один блок на два экрана: создание задачи и правка плана у существующей.
  * Иначе поля разъедутся — а это то самое место, где приложение должно
  * выглядеть одинаково, потому что человек сюда возвращается.
  *
- * Триггер остаётся свободным текстом: «после того как налью кофе» — такой же
- * законный план, как «в десять утра», и по исследованиям привязка к событию
- * работает даже надёжнее, чем к часам. Время лежит отдельным полем и нужно
- * только затем, чтобы телефону было за что зацепиться.
+ * **Поле одно.** Раньше их было два — «Если…» и «…то я», — и второе просило
+ * написать то же самое, что человек уже назвал первым шагом строкой выше.
+ * Вопрос «когда сделаешь первый шаг?» при этом стоял над полями про действие,
+ * так что экран спрашивал одно, а просил другое.
+ *
+ * Порядок «сделаю — если» взят из трекеров привычек и по-русски читается
+ * легче классического «если — то»: обещание идёт первым, а зацепка
+ * договаривает фразу. Сама зацепка остаётся свободным текстом: «попью чай» —
+ * такой же законный план, как «в десять утра», и по исследованиям привязка
+ * к событию работает даже надёжнее, чем к часам. Время лежит отдельным
+ * полем и нужно только затем, чтобы телефону было за что зацепиться.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlanFields(
     ifTrigger: String,
     onIfTrigger: (String) -> Unit,
-    thenAction: String,
-    onThenAction: (String) -> Unit,
+    /** Первый шаг задачи: он же вторая половина плана, показывается в итоге. */
+    firstStep: String,
     minuteOfDay: Int?,
     onMinuteOfDay: (Int?) -> Unit,
     daysMask: Int,
@@ -67,8 +75,14 @@ fun PlanFields(
         OutlinedTextField(
             value = ifTrigger,
             onValueChange = onIfTrigger,
-            label = { Text("Если…") },
-            placeholder = { Text("налью кофе утром") },
+            label = { Text("Сделаю первый шаг, если…") },
+            placeholder = { Text("попью чай") },
+            // Примеры, а не одно объяснение: зацепка — вещь, которую проще
+            // узнать в чужой, чем придумать с нуля. Все четыре про обычный
+            // день и ни одна не про «правильный распорядок»
+            supportingText = {
+                Text("Например: попью чай · сяду за стол · закончится созвон · отведу ребёнка")
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -112,15 +126,28 @@ fun PlanFields(
             )
         }
 
-        Spacer(Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = thenAction,
-            onValueChange = onThenAction,
-            label = { Text("…то я") },
-            placeholder = { Text("открою файл отчёта") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        // Фраза целиком — пока человек её ещё может поправить.
+        // Вторую половину он не писал, она подставлена, и увидеть,
+        // как это склеилось, важнее любого объяснения под полем
+        Task.planLine(ifTrigger, firstStep)?.let { plan ->
+            Spacer(Modifier.height(16.dp))
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(
+                        if (minuteOfDay == null) "Будет на виду"
+                        else "Скажу в ${Reminder.formatTime(minuteOfDay)}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text("«$plan»", style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+        }
     }
 
     if (pickerOpen) {

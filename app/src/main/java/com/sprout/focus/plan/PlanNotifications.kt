@@ -71,8 +71,7 @@ object PlanNotifications {
     fun cancel(context: Context, taskId: Long) =
         NotificationManagerCompat.from(context).cancel(ID_BASE + taskId.toInt())
 
-    private fun fullPlan(task: Task): String =
-        if (task.hasPlan) "Если ${task.ifTrigger}, то ${task.thenAction}" else task.firstStep
+    private fun fullPlan(task: Task): String = task.planLine ?: task.firstStep
 
     /**
      * «Начать» ничего не открывает: сессия заводится прямо в получателе,

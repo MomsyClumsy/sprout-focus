@@ -69,9 +69,9 @@ fun TodayScreen(
             currentTask != null ->
                 CurrentTask(
                     currentTask, stage, streak, onStart, onCantStart, onPickTask,
-                    hasOtherTasks, shortOnly, onOpenTask,
+                    hasOtherTasks, shortOnly, onOpenTask, onAddTask,
                 )
-            hasOtherTasks -> NothingChosen(stage, onPickTask)
+            hasOtherTasks -> NothingChosen(stage, onPickTask, onAddTask)
             else -> Empty(onAddTask)
         }
 
@@ -105,6 +105,7 @@ private fun CurrentTask(
     hasOtherTasks: Boolean,
     shortOnly: Boolean,
     onOpenTask: (Long) -> Unit,
+    onAddTask: () -> Unit,
 ) {
     // 20 минут по умолчанию. Классические 25 в РКИ 2025 быстрее растили
     // усталость, а жёсткая структура сильнее роняла мотивацию, чем свобода.
@@ -143,10 +144,10 @@ private fun CurrentTask(
             Spacer(Modifier.height(4.dp))
             Text(task.firstStep, style = MaterialTheme.typography.bodyLarge)
 
-            if (task.hasPlan) {
+            task.planLine?.let { plan ->
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Если ${task.ifTrigger}, то я ${task.thenAction}",
+                    plan,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -223,10 +224,17 @@ private fun CurrentTask(
             Text("Другая задача", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+
+    // Задача приходит в голову не на вкладке со списком, а когда человек
+    // уже смотрит на главный экран. Отправлять его за ней на другую вкладку —
+    // лишний повод забыть, зачем шёл
+    TextButton(onClick = onAddTask) {
+        Text("Добавить задачу", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
 @Composable
-private fun NothingChosen(stage: Int, onPickTask: () -> Unit) {
+private fun NothingChosen(stage: Int, onPickTask: () -> Unit, onAddTask: () -> Unit) {
     Spacer(Modifier.height(32.dp))
     PlantArt(stage = stage, size = 120.dp)
     Spacer(Modifier.height(20.dp))
@@ -245,6 +253,10 @@ private fun NothingChosen(stage: Int, onPickTask: () -> Unit) {
             .fillMaxWidth()
             .height(56.dp)
     ) { Text("Выбрать задачу") }
+
+    TextButton(onClick = onAddTask) {
+        Text("Добавить задачу", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
 @Composable

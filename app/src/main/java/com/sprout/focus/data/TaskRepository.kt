@@ -45,6 +45,10 @@ class TaskRepository(private val dao: SproutDao, private val context: Context) {
      *
      * Событие пишем без содержимого правки: что человек переписал название,
      * знать полезно, а хранить обе версии его формулировок — уже слежка.
+     *
+     * Полей, которых нет в форме, правка не касается. «Зачем это мне»
+     * человек отвечает в ветке «Не хочу», и его ответ не должен исчезать
+     * оттого, что он потом зашёл поправить название задачи.
      */
     suspend fun updateTask(id: Long, draft: TaskDraft) {
         val task = dao.getTask(id) ?: return
@@ -52,8 +56,8 @@ class TaskRepository(private val dao: SproutDao, private val context: Context) {
             task.copy(
                 title = draft.title.trim(),
                 firstStep = draft.firstStep.trim(),
-                copingPlan = draft.copingPlan?.trim()?.ifBlank { null },
-                whyItMatters = draft.whyItMatters?.trim()?.ifBlank { null },
+                copingPlan = draft.copingPlan?.trim()?.ifBlank { null } ?: task.copingPlan,
+                whyItMatters = draft.whyItMatters?.trim()?.ifBlank { null } ?: task.whyItMatters,
             )
         )
         dao.insertEvent(Event(type = EventType.TASK_EDITED, taskId = id))

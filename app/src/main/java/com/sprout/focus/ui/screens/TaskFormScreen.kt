@@ -65,23 +65,14 @@ fun TaskFormScreen(
     var title by rememberSaveable(existing?.id) { mutableStateOf(existing?.title.orEmpty()) }
     var firstStep by rememberSaveable(existing?.id) { mutableStateOf(existing?.firstStep.orEmpty()) }
     var ifTrigger by rememberSaveable(existing?.id) { mutableStateOf(existing?.ifTrigger.orEmpty()) }
-    var thenAction by rememberSaveable(existing?.id) { mutableStateOf(existing?.thenAction.orEmpty()) }
-    var coping by rememberSaveable(existing?.id) { mutableStateOf(existing?.copingPlan.orEmpty()) }
-    var why by rememberSaveable(existing?.id) { mutableStateOf(existing?.whyItMatters.orEmpty()) }
     var minuteOfDay by rememberSaveable(existing?.id) {
         mutableStateOf(existing?.remindMinuteOfDay)
     }
     var daysMask by rememberSaveable(existing?.id) {
         mutableIntStateOf(existing?.remindDaysMask ?: Reminder.ONE_OFF)
     }
-    // У задачи, где эти поля уже заполнены, раздел открыт сразу: иначе
-    // человек их не увидит и решит, что они потерялись
-    var extrasOpen by rememberSaveable(existing?.id) {
-        mutableStateOf(!existing?.copingPlan.isNullOrBlank() || !existing?.whyItMatters.isNullOrBlank())
-    }
-
-    val planFilled = ifTrigger.isNotBlank() && thenAction.isNotBlank()
-    val canSave = title.isNotBlank() && firstStep.isNotBlank() && (!planRequired || planFilled)
+    val canSave = title.isNotBlank() && firstStep.isNotBlank() &&
+        (!planRequired || ifTrigger.isNotBlank())
 
     Column(
         modifier = Modifier
@@ -138,36 +129,12 @@ fun TaskFormScreen(
         PlanFields(
             ifTrigger = ifTrigger,
             onIfTrigger = { ifTrigger = it },
-            thenAction = thenAction,
-            onThenAction = { thenAction = it },
+            firstStep = firstStep,
             minuteOfDay = minuteOfDay,
             onMinuteOfDay = { minuteOfDay = it },
             daysMask = daysMask,
             onDaysMask = { daysMask = it },
         )
-
-        Spacer(Modifier.height(16.dp))
-
-        TextButton(onClick = { extrasOpen = !extrasOpen }) {
-            Text(if (extrasOpen) "Свернуть" else "Ещё два вопроса")
-        }
-
-        if (extrasOpen) {
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = coping,
-                onValueChange = { coping = it },
-                label = { Text("Если захочется отвлечься, то я…") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = why,
-                onValueChange = { why = it },
-                label = { Text("Зачем это мне") },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
 
         Spacer(Modifier.height(32.dp))
 
@@ -178,9 +145,15 @@ fun TaskFormScreen(
                         title = title,
                         firstStep = firstStep,
                         ifTrigger = ifTrigger.ifBlank { null },
-                        thenAction = thenAction.ifBlank { null },
-                        copingPlan = coping.ifBlank { null },
-                        whyItMatters = why.ifBlank { null },
+                        // Вторая половина плана больше не хранится: ею служит
+                        // первый шаг. У старой задачи поле затрётся — и это
+                        // правильно, иначе в уведомлении осталась бы фраза,
+                        // которую человек уже нигде не видит и не может поправить
+                        thenAction = null,
+                        // copingPlan и whyItMatters форма больше не спрашивает.
+                        // null тут значит «не трогать»: ответ на «зачем это мне»
+                        // человек даёт в ветке «Не хочу», и правка названия
+                        // задачи не должна его стирать
                         remindMinuteOfDay = minuteOfDay,
                         remindDaysMask = daysMask,
                     )
