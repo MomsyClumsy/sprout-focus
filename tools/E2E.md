@@ -9,8 +9,8 @@
 ## Автотесты
 
 ```powershell
-$env:JAVA_HOME = "C:\Users\Tornado\Tools\jdk21"
-cd C:\Users\Tornado\Projects\Sprout
+$env:JAVA_HOME = "C:\Tools\jdk21"    # свой путь к JDK 21
+cd путь\к\Sprout
 .\gradlew.bat testDebugUnitTest          # расчёт и формулировки, без устройства
 .\gradlew.bat connectedDebugAndroidTest  # миграции и сквозной путь, на эмуляторе
 ```
