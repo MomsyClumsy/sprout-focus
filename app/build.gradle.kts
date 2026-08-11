@@ -75,6 +75,9 @@ android {
 
     buildFeatures {
         compose = true
+        // Нужен ради версии приложения: она пишется в файл копии, чтобы потом
+        // было видно, из какого Sprout эти данные
+        buildConfig = true
     }
 }
 
@@ -102,6 +105,10 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
 
     testImplementation(libs.junit)
+    // Настоящая org.json для тестов: та, что в Android SDK, в юнит-тестах
+    // подменена заглушками и на любой вызов бросает «not mocked».
+    // Копия данных разбирается именно ею, и проверить её надо по-настоящему
+    testImplementation(libs.json)
 
     // На устройстве: миграции базы и сквозной путь по экранам
     androidTestImplementation(libs.junit)

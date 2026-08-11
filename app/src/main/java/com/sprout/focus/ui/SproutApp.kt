@@ -37,6 +37,7 @@ import com.sprout.focus.data.PlanRule
 import com.sprout.focus.focusguard.FocusGuard
 import com.sprout.focus.focusguard.QuietMode
 import com.sprout.focus.plan.OpenRequest
+import com.sprout.focus.ui.screens.BackupScreen
 import com.sprout.focus.ui.screens.TaskFormScreen
 import com.sprout.focus.ui.screens.CantStartScreen
 import com.sprout.focus.ui.screens.ExperimentScreen
@@ -62,6 +63,7 @@ private const val SESSION_DONE = "session_done"
 private const val CANT_START = "cant_start"
 private const val GUARD = "guard"
 private const val EXPERIMENT = "experiment"
+private const val BACKUP = "backup"
 
 private data class Tab(
     val route: String,
@@ -202,6 +204,7 @@ fun SproutApp(
                 MeScreen(
                     state = me,
                     onOpenGuard = { navController.navigate(GUARD) },
+                    onOpenBackup = { navController.navigate(BACKUP) },
                     experiment = experiment,
                     onOpenExperiment = { navController.navigate(EXPERIMENT) },
                     onToggleKept = { hypothesis, value -> vm.setKeptChange(hypothesis, value) },
@@ -220,6 +223,18 @@ fun SproutApp(
                         vm.resolveExperiment(keep)
                         navController.popBackStack()
                     },
+                )
+            }
+
+            composable(BACKUP) {
+                val backup by vm.backupState.collectAsState()
+                BackupScreen(
+                    state = backup,
+                    onExport = { vm.exportBackup(it) },
+                    onPick = { vm.readBackup(it) },
+                    onConfirmRestore = { vm.confirmRestore() },
+                    onCancelRestore = { vm.cancelRestore() },
+                    suggestedName = vm.suggestedBackupName(),
                 )
             }
 

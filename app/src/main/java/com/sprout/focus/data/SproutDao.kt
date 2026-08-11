@@ -208,4 +208,94 @@ interface SproutDao {
             "JOIN tasks t ON t.id = s.taskId WHERE t.createdAt >= :since"
     )
     suspend fun startedTaskCount(since: Long): Int
+
+    // --- копия данных ---
+    //
+    // Всё целиком, включая завершённые и брошенные задачи: копия должна
+    // повторять состояние приложения, а не показывать его лучшим, чем оно
+    // есть. Порядок по id — чтобы файл двух одинаковых баз выходил
+    // одинаковым и его можно было сравнить глазами.
+
+    @Query("SELECT * FROM tasks ORDER BY id")
+    suspend fun allTasks(): List<Task>
+
+    @Query("SELECT * FROM events ORDER BY id")
+    suspend fun allEvents(): List<Event>
+
+    @Query("SELECT * FROM sessions ORDER BY id")
+    suspend fun allSessions(): List<Session>
+
+    @Query("SELECT * FROM grown_plants ORDER BY id")
+    suspend fun allGrownPlants(): List<GrownPlant>
+
+    @Query("SELECT * FROM blocked_apps ORDER BY packageName")
+    suspend fun allBlockedApps(): List<BlockedApp>
+
+    @Query("SELECT * FROM experiments ORDER BY id")
+    suspend fun allExperiments(): List<Experiment>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTasks(items: List<Task>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertEvents(items: List<Event>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSessions(items: List<Session>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGrownPlants(items: List<GrownPlant>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBlockedApps(items: List<BlockedApp>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertExperiments(items: List<Experiment>)
+
+    @Query("DELETE FROM tasks")
+    suspend fun deleteAllTasks()
+
+    @Query("DELETE FROM events")
+    suspend fun deleteAllEvents()
+
+    @Query("DELETE FROM sessions")
+    suspend fun deleteAllSessions()
+
+    @Query("DELETE FROM garden")
+    suspend fun deleteGarden()
+
+    @Query("DELETE FROM grown_plants")
+    suspend fun deleteAllGrownPlants()
+
+    @Query("DELETE FROM blocked_apps")
+    suspend fun deleteAllBlockedApps()
+
+    @Query("DELETE FROM experiments")
+    suspend fun deleteAllExperiments()
+
+    /**
+     * Заменить всё содержимое базы данными из копии.
+     *
+     * Одной транзакцией: на середине этой операции у человека нет ни старых
+     * данных, ни новых. Оборвись она там — приложение осталось бы с половиной
+     * задач и садом от другой жизни, и понять это было бы не по чему.
+     */
+    @Transaction
+    suspend fun replaceAll(data: BackupData) {
+        deleteAllEvents()
+        deleteAllSessions()
+        deleteAllTasks()
+        deleteGarden()
+        deleteAllGrownPlants()
+        deleteAllBlockedApps()
+        deleteAllExperiments()
+
+        insertTasks(data.tasks)
+        insertSessions(data.sessions)
+        insertEvents(data.events)
+        data.garden?.let { upsertGarden(it) }
+        insertGrownPlants(data.grownPlants)
+        insertBlockedApps(data.blockedApps)
+        insertExperiments(data.experiments)
+    }
 }

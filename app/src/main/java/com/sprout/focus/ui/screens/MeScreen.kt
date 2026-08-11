@@ -48,6 +48,7 @@ import com.sprout.focus.ui.theme.SproutTheme
 fun MeScreen(
     state: MeState,
     onOpenGuard: () -> Unit = {},
+    onOpenBackup: () -> Unit = {},
     experiment: ExperimentState = ExperimentState(),
     onOpenExperiment: () -> Unit = {},
     onToggleKept: (String, Boolean) -> Unit = { _, _ -> },
@@ -93,6 +94,17 @@ fun MeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onOpenGuard)
+                .padding(vertical = 12.dp)
+        )
+
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "Копия данных →",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpenBackup)
                 .padding(vertical = 12.dp)
         )
         Spacer(Modifier.height(24.dp))

@@ -1,12 +1,15 @@
 package com.sprout.focus.ui
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sprout.focus.SproutApplication
+import com.sprout.focus.data.Backup
+import com.sprout.focus.data.BackupRepository
 import com.sprout.focus.data.CantStartResolution
 import com.sprout.focus.data.Garden
 import com.sprout.focus.data.ExperimentRepository
@@ -27,7 +30,9 @@ import com.sprout.focus.data.TaskRepository
 import com.sprout.focus.focusguard.FocusGuard
 import com.sprout.focus.focusguard.QuietMode
 import com.sprout.focus.plan.OpenRequest
+import com.sprout.focus.ui.screens.BackupUiState
 import com.sprout.focus.ui.screens.GuardUiState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,6 +42,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SproutViewModel(
     private val app: Application,
@@ -47,6 +53,7 @@ class SproutViewModel(
     insights: InsightsRepository,
     private val guard: GuardRepository,
     private val experiments: ExperimentRepository,
+    private val backups: BackupRepository,
 ) : ViewModel() {
 
     init {
@@ -333,6 +340,74 @@ class SproutViewModel(
         sessions.finish(completed, rating, interruptions, note)
     }
 
+    // --- копия данных ---
+
+    private val _backup = MutableStateFlow(BackupUiState())
+    val backupState: StateFlow<BackupUiState> = _backup
+
+    /**
+     * Файл пишется через поток, который даёт система: приложение не знает,
+     * куда его положат, и не должно знать. Ошибку здесь показываем целиком —
+     * это то место, где человек имеет право знать, что копия не сделана.
+     */
+    fun exportBackup(uri: Uri) = viewModelScope.launch {
+        _backup.update { it.copy(busy = true, message = null) }
+        val result = runCatching {
+            withContext(Dispatchers.IO) {
+                app.contentResolver.openOutputStream(uri)?.use { backups.exportTo(it) }
+                    ?: throw Backup.Broken("Не получилось открыть файл для записи")
+            }
+        }
+        _backup.update {
+            it.copy(
+                busy = false,
+                message = result.fold(
+                    onSuccess = { "Копия сохранена" },
+                    onFailure = { e -> e.message ?: "Копия не сохранилась" },
+                )
+            )
+        }
+    }
+
+    /** Прочитать выбранный файл, ничего не меняя: решение — за человеком. */
+    fun readBackup(uri: Uri) = viewModelScope.launch {
+        _backup.update { it.copy(busy = true, message = null) }
+        val result = runCatching {
+            withContext(Dispatchers.IO) {
+                app.contentResolver.openInputStream(uri)?.use { backups.read(it) }
+                    ?: throw Backup.Broken("Не получилось открыть этот файл")
+            }
+        }
+        _backup.update {
+            it.copy(
+                busy = false,
+                pending = result.getOrNull(),
+                message = result.exceptionOrNull()?.message,
+            )
+        }
+    }
+
+    fun confirmRestore() = viewModelScope.launch {
+        val data = _backup.value.pending ?: return@launch
+        _backup.update { it.copy(busy = true, pending = null) }
+        val result = runCatching { backups.restore(data) }
+        _backup.update {
+            it.copy(
+                busy = false,
+                message = result.fold(
+                    onSuccess = { "Данные восстановлены: ${data.summary}" },
+                    onFailure = { e -> e.message ?: "Восстановить не получилось" },
+                )
+            )
+        }
+    }
+
+    fun cancelRestore() {
+        _backup.update { it.copy(pending = null) }
+    }
+
+    fun suggestedBackupName(): String = backups.suggestedName()
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -340,7 +415,7 @@ class SproutViewModel(
                         as SproutApplication
                 SproutViewModel(
                     app, app.repository, app.sessions, app.plans,
-                    app.garden, app.insights, app.guard, app.experiments,
+                    app.garden, app.insights, app.guard, app.experiments, app.backups,
                 )
             }
         }

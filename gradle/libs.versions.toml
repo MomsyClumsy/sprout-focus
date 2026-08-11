@@ -12,6 +12,7 @@ navigation = "2.9.8"
 room = "2.8.4"
 ksp = "2.3.11"
 junit = "4.13.2"
+json = "20240303"
 androidxTestJunit = "1.3.0"
 androidxTestRunner = "1.7.0"
 glance = "1.1.1"
@@ -39,6 +40,9 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 
 # Тесты на JVM: ими проверяется расчётная часть, которая не знает про Android
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+# Та же org.json, что и в Android, но настоящая: в юнит-тестах версия из SDK
+# подменена заглушками и бросает «not mocked» на любой вызов
+json = { group = "org.json", name = "json", version.ref = "json" }
 
 # Тесты на устройстве: миграции базы и сквозные пути по экранам. Всё, что
 # требует настоящих Android и Compose, — то есть проверка не расчёта, а того,
