@@ -95,6 +95,17 @@ abstract class SproutDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Все миграции подряд.
+         *
+         * Отдельным списком, потому что его читает не только [build]:
+         * тест на устройстве поднимает базу версии 4 и прогоняет через
+         * тот же самый набор. Проверять миграции копией списка — значит
+         * проверять копию, а не то, что стоит у человека на телефоне.
+         */
+        val MIGRATIONS: Array<Migration> =
+            arrayOf(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+
         fun build(context: Context): SproutDatabase =
             Room.databaseBuilder(
                 context.applicationContext,
@@ -104,7 +115,7 @@ abstract class SproutDatabase : RoomDatabase() {
                 // fallbackToDestructiveMigration намеренно убран.
                 // Пропущенная миграция теперь роняет приложение на старте —
                 // это заметно сразу, в отличие от тихо стёртых данных.
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                .addMigrations(*MIGRATIONS)
                 .build()
     }
 }

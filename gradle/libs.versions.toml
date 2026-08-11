@@ -12,6 +12,8 @@ navigation = "2.9.8"
 room = "2.8.4"
 ksp = "2.3.11"
 junit = "4.13.2"
+androidxTestJunit = "1.3.0"
+androidxTestRunner = "1.7.0"
 glance = "1.1.1"
 
 [libraries]
@@ -37,6 +39,15 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 
 # Тесты на JVM: ими проверяется расчётная часть, которая не знает про Android
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+
+# Тесты на устройстве: миграции базы и сквозные пути по экранам. Всё, что
+# требует настоящих Android и Compose, — то есть проверка не расчёта, а того,
+# что приложение вообще работает целиком.
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestJunit" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
+androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "androidxTestRunner" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 
 # Glance — виджеты на домашний экран. Пишутся почти как Compose, но рисует их
 # чужой процесс (лаунчер), поэтому набор элементов свой и урезанный.
