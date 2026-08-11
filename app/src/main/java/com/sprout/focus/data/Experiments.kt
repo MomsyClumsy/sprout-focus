@@ -17,6 +17,17 @@ package com.sprout.focus.data
  * Эксперимент, предложенный «просто так», — выдумка, а человек поверит
  * и потратит на неё неделю.
  */
+/**
+ * Почему у новой задачи просят план.
+ *
+ * Экран должен сказать правду о том, что происходит: «на эту неделю, идёт
+ * эксперимент» и «ты сама это оставила» — разные вещи, и человек, увидев
+ * первое через месяц после конца эксперимента, перестанет верить и всему
+ * остальному. Это те же грабли, что и с обещанием, которое приложение
+ * не выполняло.
+ */
+enum class PlanRule { NONE, EXPERIMENT, KEPT }
+
 object Experiments {
 
     /** Сколько длится эксперимент. */
@@ -49,6 +60,24 @@ object Experiments {
     const val OUTCOME_NO_EFFECT = "no_effect"
     const val OUTCOME_NOT_ENOUGH = "not_enough"
     const val OUTCOME_STOPPED = "stopped"
+
+    /**
+     * Стало заметно хуже.
+     *
+     * Отдельный исход, а не «разницы не видно»: это настоящий результат,
+     * и человек имеет право его знать. Гипотеза здесь опровергнута, причём
+     * с пользой — понятно, как делать не надо.
+     */
+    const val OUTCOME_WORSE = "worse"
+
+    /**
+     * Сколько молчать после законченного эксперимента.
+     *
+     * Следующая гипотеза никуда не денется, а приложение, предлагающее
+     * новую проверку сразу после итога, превращается в конвейер и само
+     * становится тем требованием, от которого человек сюда пришёл.
+     */
+    const val PAUSE_DAYS = 3
 
     /**
      * Что приложение знает о человеке на момент выбора гипотезы.
@@ -184,6 +213,107 @@ object Experiments {
     fun baselineText(baselinePercent: Int, hypothesis: String): String = when (hypothesis) {
         IF_THEN -> "Раньше ты садилась за $baselinePercent% задач."
         else -> "Раньше до конца доходило $baselinePercent% заходов."
+    }
+
+    // --- итог недели ---
+
+    /** Чем кончилась неделя: исход и цифры, из которых он получен. */
+    data class Result(
+        val outcome: String,
+        val resultPercent: Int,
+        val observations: Int,
+    )
+
+    /**
+     * Посчитать исход.
+     *
+     * Молчать здесь важнее, чем на экране «Я»: там наблюдение просто
+     * описывает прошлое, а тут приложение предлагает поменять привычку.
+     * Поэтому вывод делается, только если наблюдений хватает **и** до
+     * эксперимента было с чем сравнивать: неделя против пустоты — это
+     * не сравнение, а цифра, выданная за вывод.
+     */
+    fun result(baselinePercent: Int, baselineCount: Int, done: Int, total: Int): Result {
+        val percent = Insights.percent(done, total)
+        val outcome = when {
+            total < MIN_OBSERVATIONS || baselineCount < MIN_OBSERVATIONS -> OUTCOME_NOT_ENOUGH
+            percent - baselinePercent >= MIN_GAP_PERCENT -> OUTCOME_CONFIRMED
+            baselinePercent - percent >= MIN_GAP_PERCENT -> OUTCOME_WORSE
+            else -> OUTCOME_NO_EFFECT
+        }
+        return Result(outcome, percent, total)
+    }
+
+    fun resultTitle(outcome: String): String = when (outcome) {
+        OUTCOME_CONFIRMED -> "Похоже, это про тебя"
+        OUTCOME_WORSE -> "Вышло наоборот"
+        OUTCOME_NO_EFFECT -> "Разницы не видно"
+        else -> "Данных не хватило"
+    }
+
+    /**
+     * Цифры недели одной строкой.
+     *
+     * Тот же приём, что и у хода: доли, а не проценты. Сравнение с прошлым
+     * идёт процентом — но только потому, что базовый уровень посчитан
+     * из другого числа наблюдений, и доли рядом читались бы как одна шкала.
+     */
+    fun resultNumbers(
+        hypothesis: String,
+        done: Int,
+        total: Int,
+        baselinePercent: Int,
+        baselineCount: Int,
+    ): String {
+        // «Пока заходов не было.» уже с точкой, а «Дошли до конца: 0 из 3» —
+        // без неё: обе строки живут своей жизнью в других местах экрана
+        val week = progressText(done, total, hypothesis).trimEnd('.')
+        if (baselineCount < MIN_OBSERVATIONS) return "$week."
+        return "$week. ${baselineText(baselinePercent, hypothesis)}"
+    }
+
+    /** Что это значит и что с этим делать. */
+    fun resultMeaning(hypothesis: String, outcome: String, total: Int): String = when (outcome) {
+        OUTCOME_NOT_ENOUGH ->
+            "За неделю набралось слишком мало, чтобы делать из этого вывод. " +
+                "Придумывать его не будем — гипотеза остаётся непроверенной, " +
+                "и это честнее любой цифры."
+
+        OUTCOME_CONFIRMED -> when (hypothesis) {
+            IF_THEN -> "За задачу, у которой сразу есть план, ты садишься чаще. " +
+                "Одна строка при создании задачи — и начать оказывается легче."
+            else -> "Короткий заход ты доводишь до конца чаще. Тот, который " +
+                "закончен, продвигает дальше длинного, который брошен."
+        }
+
+        OUTCOME_WORSE -> when (hypothesis) {
+            IF_THEN -> "Похоже, лишнее поле при создании задачи тебе мешает " +
+                "больше, чем план помогает. Возвращаем как было."
+            else -> "Похоже, длинный заход подходит тебе лучше — на нём ты " +
+                "доходишь до конца чаще. Возвращаем как было."
+        }
+
+        else -> when (hypothesis) {
+            IF_THEN -> "Дело оказалось не в плане. Это тоже ответ: искать " +
+                "причину стоит не здесь."
+            else -> "Дело оказалось не в длине захода. Это тоже ответ: искать " +
+                "причину стоит не здесь."
+        }
+    }
+
+    /** Что именно останется, если закрепить. Человек соглашается не вслепую. */
+    fun keepText(hypothesis: String): String = when (hypothesis) {
+        IF_THEN -> "Поле плана у новой задачи останется обязательным. " +
+            "Выключить можно в любой момент на экране «Я»."
+        else -> "Короткие заходы — 15, $SHORT_MINUTES и 25 — останутся первыми, " +
+            "а 45 и «Поток» — под кнопкой «Ещё». Выключить можно в любой " +
+            "момент на экране «Я»."
+    }
+
+    /** Подпись тумблера в разделе «Закреплено» на экране «Я». */
+    fun keptLabel(hypothesis: String): String = when (hypothesis) {
+        IF_THEN -> "План у новой задачи обязателен"
+        else -> "Короткие заходы первыми"
     }
 
     const val EMPTY_TEXT =

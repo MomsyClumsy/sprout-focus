@@ -93,7 +93,7 @@ fun SproutApp(
     val me by vm.me.collectAsState()
     val experiment by vm.experiment.collectAsState()
     val shortOnly by vm.shortSessionsOnly.collectAsState()
-    val planRequired by vm.planRequired.collectAsState()
+    val planRule by vm.planRule.collectAsState()
 
     // Дошла ли сессия до конца или её остановили раньше — нужно экрану итога
     var finishedNaturally by remember { mutableStateOf(false) }
@@ -195,6 +195,7 @@ fun SproutApp(
                     onOpenGuard = { navController.navigate(GUARD) },
                     experiment = experiment,
                     onOpenExperiment = { navController.navigate(EXPERIMENT) },
+                    onToggleKept = { hypothesis, value -> vm.setKeptChange(hypothesis, value) },
                 )
             }
 
@@ -204,6 +205,12 @@ fun SproutApp(
                     onStart = { vm.startExperiment(it) },
                     onStop = { vm.stopExperiment() },
                     onBack = { navController.popBackStack() },
+                    // Итог прочитан — экрану больше нечего показывать,
+                    // и человек возвращается туда, откуда пришёл
+                    onResolve = { keep ->
+                        vm.resolveExperiment(keep)
+                        navController.popBackStack()
+                    },
                 )
             }
 
@@ -242,7 +249,7 @@ fun SproutApp(
                         navController.popBackStack()
                     },
                     onCancel = { navController.popBackStack() },
-                    planRequired = planRequired,
+                    planRule = planRule,
                 )
             }
 

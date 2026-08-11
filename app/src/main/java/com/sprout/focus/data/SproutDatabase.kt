@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         Task::class, Event::class, Session::class, Garden::class, GrownPlant::class,
         BlockedApp::class, Experiment::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class SproutDatabase : RoomDatabase() {
@@ -80,6 +80,21 @@ abstract class SproutDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Итог эксперимента: увиден ли он и закрепили ли изменение.
+         *
+         * Неделя кончается сама по часам, а прочитать итог человек может
+         * через три дня — поэтому «когда кончилось» и «когда человек это
+         * увидел» приходится хранить порознь.
+         */
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE experiments ADD COLUMN resolvedAt INTEGER")
+                db.execSQL("ALTER TABLE experiments ADD COLUMN kept INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE experiments ADD COLUMN succeeded INTEGER")
+            }
+        }
+
         fun build(context: Context): SproutDatabase =
             Room.databaseBuilder(
                 context.applicationContext,
@@ -89,7 +104,7 @@ abstract class SproutDatabase : RoomDatabase() {
                 // fallbackToDestructiveMigration намеренно убран.
                 // Пропущенная миграция теперь роняет приложение на старте —
                 // это заметно сразу, в отличие от тихо стёртых данных.
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                 .build()
     }
 }

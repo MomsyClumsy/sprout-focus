@@ -48,6 +48,8 @@ fun ExperimentScreen(
     onStart: (String) -> Unit,
     onStop: () -> Unit,
     onBack: () -> Unit,
+    /** Итог прочитан. true — оставить изменение насовсем. */
+    onResolve: (Boolean) -> Unit = {},
 ) {
     Column(
         Modifier
@@ -70,6 +72,8 @@ fun ExperimentScreen(
             )
 
             state.running != null -> Running(state, hypothesis, onStop)
+
+            state.finished != null -> Result(state.finished, hypothesis, onResolve)
 
             else -> Offer(hypothesis, onStart)
         }
@@ -155,6 +159,97 @@ private fun Running(
 }
 
 /**
+ * Итог недели.
+ *
+ * Главное здесь — что итог бывает пустым. «Разницы не видно» и «данных
+ * не хватило» показываются так же спокойно, как подтверждение: приложение,
+ * которое умеет только подтверждать свои гипотезы, не проверяет их, а
+ * уговаривает. Отрицательный результат — тоже ответ, и он экономит неделю
+ * следующей проверке.
+ *
+ * Кнопка «Закрепить» есть только у подтвердившейся гипотезы. Предлагать
+ * оставить навсегда то, что не сработало, — значит просить человека
+ * поверить приложению вопреки его же данным.
+ */
+@Composable
+private fun Result(
+    experiment: Experiment,
+    hypothesis: Experiments.Hypothesis,
+    onResolve: (Boolean) -> Unit,
+) {
+    val outcome = experiment.outcome ?: Experiments.OUTCOME_NOT_ENOUGH
+    val confirmed = outcome == Experiments.OUTCOME_CONFIRMED
+
+    Text(hypothesis.title, style = MaterialTheme.typography.titleLarge)
+    Spacer(Modifier.height(4.dp))
+    Text(
+        "Неделя закончилась",
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    Spacer(Modifier.height(20.dp))
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        ),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                Experiments.resultTitle(outcome),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                Experiments.resultNumbers(
+                    hypothesis = experiment.hypothesis,
+                    done = experiment.succeeded ?: 0,
+                    total = experiment.observations ?: 0,
+                    baselinePercent = experiment.baselinePercent,
+                    baselineCount = experiment.baselineCount,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+    Text(
+        Experiments.resultMeaning(
+            experiment.hypothesis,
+            outcome,
+            experiment.observations ?: 0,
+        ),
+        style = MaterialTheme.typography.bodyLarge,
+    )
+
+    Spacer(Modifier.height(24.dp))
+
+    if (confirmed) {
+        Block("Если закрепить", Experiments.keepText(experiment.hypothesis))
+        Spacer(Modifier.height(20.dp))
+        Button(
+            onClick = { onResolve(true) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+        ) { Text("Закрепить") }
+        Spacer(Modifier.height(4.dp))
+        TextButton(onClick = { onResolve(false) }, modifier = Modifier.fillMaxWidth()) {
+            Text("Вернуть как было", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    } else {
+        Button(
+            onClick = { onResolve(false) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+        ) { Text("Понятно") }
+    }
+}
+
+/**
  * «Раньше у тебя было столько-то» — и сразу из скольких наблюдений.
  *
  * Процент без числа за ним читается как точный. Если базы почти нет,
@@ -220,8 +315,12 @@ fun ExperimentCard(state: ExperimentState, onClick: () -> Unit) {
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(
-                if (state.running != null) "Идёт эксперимент · день ${state.dayNumber} из ${Experiments.DAYS}"
-                else "Есть что проверить",
+                when {
+                    state.running != null ->
+                        "Идёт эксперимент · день ${state.dayNumber} из ${Experiments.DAYS}"
+                    state.finished != null -> "Неделя закончилась"
+                    else -> "Есть что проверить"
+                },
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -229,10 +328,16 @@ fun ExperimentCard(state: ExperimentState, onClick: () -> Unit) {
             Text(hypothesis.title, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(4.dp))
             Text(
-                if (state.running != null) {
-                    Experiments.progressText(state.done, state.total, hypothesis.key)
-                } else {
-                    hypothesis.statement
+                when {
+                    state.running != null ->
+                        Experiments.progressText(state.done, state.total, hypothesis.key)
+                    // На карточке — только заголовок исхода. Разбор ждёт на
+                    // своём экране: итог, прочитанный мельком в ленте, легко
+                    // сводится к «получилось / не получилось»
+                    state.finished != null -> Experiments.resultTitle(
+                        state.finished.outcome ?: Experiments.OUTCOME_NOT_ENOUGH
+                    ) + " · посмотреть"
+                    else -> hypothesis.statement
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -280,4 +385,39 @@ private fun ExperimentRunning() = SproutTheme(darkTheme = true) {
 @Composable
 private fun ExperimentEmpty() = SproutTheme(darkTheme = false) {
     ExperimentScreen(ExperimentState(), {}, {}, {})
+}
+
+private fun finishedWith(outcome: String, succeeded: Int, total: Int) = ExperimentState(
+    finished = Experiment(
+        id = 1,
+        hypothesis = Experiments.SHORTER,
+        startedAt = 0,
+        endsAt = 0,
+        baselinePercent = 43,
+        baselineCount = 12,
+        endedAt = 1,
+        outcome = outcome,
+        resultPercent = if (total == 0) 0 else succeeded * 100 / total,
+        observations = total,
+        succeeded = succeeded,
+    ),
+    hypothesis = Experiments.byKey(Experiments.SHORTER, Experiments.Facts(longMinutes = 45)),
+)
+
+@Preview(name = "Итог · подтвердилось", showBackground = true)
+@Composable
+private fun ExperimentConfirmed() = SproutTheme(darkTheme = false) {
+    ExperimentScreen(finishedWith(Experiments.OUTCOME_CONFIRMED, 8, 10), {}, {}, {})
+}
+
+@Preview(name = "Итог · разницы не видно", showBackground = true)
+@Composable
+private fun ExperimentNoEffect() = SproutTheme(darkTheme = true) {
+    ExperimentScreen(finishedWith(Experiments.OUTCOME_NO_EFFECT, 5, 11), {}, {}, {})
+}
+
+@Preview(name = "Итог · данных не хватило", showBackground = true)
+@Composable
+private fun ExperimentNotEnough() = SproutTheme(darkTheme = false) {
+    ExperimentScreen(finishedWith(Experiments.OUTCOME_NOT_ENOUGH, 0, 1), {}, {}, {})
 }

@@ -16,6 +16,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sprout.focus.data.CantStartReason
 import com.sprout.focus.data.ExperimentState
+import com.sprout.focus.data.Experiments
 import com.sprout.focus.data.Insights
 import com.sprout.focus.data.MeState
 import com.sprout.focus.data.Totals
@@ -48,6 +50,7 @@ fun MeScreen(
     onOpenGuard: () -> Unit = {},
     experiment: ExperimentState = ExperimentState(),
     onOpenExperiment: () -> Unit = {},
+    onToggleKept: (String, Boolean) -> Unit = { _, _ -> },
 ) {
     Column(
         modifier = Modifier
@@ -76,6 +79,11 @@ fun MeScreen(
 
         Spacer(Modifier.height(12.dp))
         AllNumbers(state.totals)
+
+        if (experiment.kept.isNotEmpty()) {
+            Spacer(Modifier.height(4.dp))
+            KeptChangesSection(experiment, onToggleKept)
+        }
 
         Spacer(Modifier.height(4.dp))
         Text(
@@ -198,6 +206,48 @@ private fun AllNumbers(totals: Totals) {
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Что осталось от закончившихся экспериментов.
+ *
+ * Раздел показывается, только если человек что-то закреплял, и не исчезает
+ * после того, как тумблер выключили: закреплённое изменение, которое некуда
+ * вернуть, — это дверь без ручки. Приложение обещало неделю, а не навсегда.
+ */
+@Composable
+private fun KeptChangesSection(
+    experiment: ExperimentState,
+    onToggle: (String, Boolean) -> Unit,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            "Закреплено",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = 12.dp),
+        )
+        experiment.kept.forEach { hypothesis ->
+            val checked = when (hypothesis) {
+                Experiments.IF_THEN -> experiment.keptChanges.planAlwaysRequired
+                else -> experiment.keptChanges.shortLengthsFirst
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    Experiments.keptLabel(hypothesis),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                Switch(checked = checked, onCheckedChange = { onToggle(hypothesis, it) })
             }
         }
     }

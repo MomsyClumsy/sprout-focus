@@ -169,6 +169,23 @@ interface SproutDao {
     @Query("SELECT DISTINCT hypothesis FROM experiments")
     suspend fun triedHypotheses(): List<String>
 
+    /**
+     * Вся история экспериментов.
+     *
+     * Одним потоком, потому что экрану «Я» нужно от неё сразу четыре вещи:
+     * что идёт, чей итог не прочитан, что уже проверялось и когда кончился
+     * последний. Таблица маленькая — по строке на неделю жизни приложения.
+     */
+    @Query("SELECT * FROM experiments ORDER BY startedAt DESC")
+    fun observeExperiments(): Flow<List<Experiment>>
+
+    /** Неделя вышла, итог посчитан, а человек его ещё не видел. */
+    @Query(
+        "SELECT * FROM experiments WHERE endedAt IS NOT NULL AND resolvedAt IS NULL " +
+            "ORDER BY endedAt DESC LIMIT 1"
+    )
+    suspend fun unresolvedExperiment(): Experiment?
+
     // --- то, из чего выбирается гипотеза и считается ход ---
 
     @Query("SELECT * FROM sessions WHERE endedAt IS NOT NULL AND startedAt >= :since ORDER BY startedAt")

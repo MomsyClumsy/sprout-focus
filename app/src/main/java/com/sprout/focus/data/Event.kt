@@ -65,6 +65,15 @@ object EventType {
     const val EXPERIMENT_STARTED = "experiment_started"
     const val EXPERIMENT_ENDED = "experiment_ended"
 
+    /**
+     * Человек прочитал итог и решил, закреплять ли изменение.
+     *
+     * Отдельно от ENDED, потому что это разные моменты: неделя кончается
+     * сама по часам, а решение принимает человек — иногда через три дня.
+     * И только по этому событию видно, что итог вообще был кем-то увиден.
+     */
+    const val EXPERIMENT_RESOLVED = "experiment_resolved"
+
     const val REMINDER_SET = "reminder_set"
     const val REMINDER_CLEARED = "reminder_cleared"
     const val REMINDER_FIRED = "reminder_fired"

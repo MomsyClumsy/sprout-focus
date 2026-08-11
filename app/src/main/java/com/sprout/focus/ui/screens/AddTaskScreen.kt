@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.sprout.focus.data.PlanRule
 import com.sprout.focus.data.Reminder
 import com.sprout.focus.data.TaskDraft
 
@@ -37,14 +38,17 @@ fun AddTaskScreen(
     onSave: (TaskDraft) -> Unit,
     onCancel: () -> Unit,
     /**
-     * Идёт эксперимент про план «если — то»: на эту неделю он обязателен.
+     * Обязателен ли план «если — то» и почему.
      *
-     * Это единственный случай, когда приложение просит заполнить лишнее
-     * поле, — и просит на неделю, чтобы проверить гипотезу на живых данных,
-     * а не потому, что так правильнее вообще.
+     * Единственный случай, когда приложение просит заполнить лишнее поле:
+     * либо идёт эксперимент, который это и проверяет, либо человек сам
+     * оставил такой порядок после подтвердившейся недели. Причину экран
+     * называет вслух — обязательное поле без объяснения читается как
+     * придирка приложения.
      */
-    planRequired: Boolean = false,
+    planRule: PlanRule = PlanRule.NONE,
 ) {
+    val planRequired = planRule != PlanRule.NONE
     var title by remember { mutableStateOf("") }
     var firstStep by remember { mutableStateOf("") }
     var ifTrigger by remember { mutableStateOf("") }
@@ -92,11 +96,15 @@ fun AddTaskScreen(
         Text("Когда сделаешь первый шаг?", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(4.dp))
         Text(
-            if (planRequired) {
-                "На эту неделю — обязательное поле: идёт эксперимент, который " +
-                    "как раз это и проверяет"
-            } else {
-                "Необязательно, но задачи с таким планом начинают заметно чаще"
+            when (planRule) {
+                PlanRule.EXPERIMENT ->
+                    "На эту неделю — обязательное поле: идёт эксперимент, который " +
+                        "как раз это и проверяет"
+                PlanRule.KEPT ->
+                    "Обязательное поле: ты оставила так после эксперимента. " +
+                        "Выключить можно на экране «Я»"
+                PlanRule.NONE ->
+                    "Необязательно, но задачи с таким планом начинают заметно чаще"
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant

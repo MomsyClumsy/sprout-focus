@@ -18,6 +18,7 @@ import com.sprout.focus.data.InsightsRepository
 import com.sprout.focus.data.InstalledApp
 import com.sprout.focus.data.MeState
 import com.sprout.focus.data.PlanRepository
+import com.sprout.focus.data.PlanRule
 import com.sprout.focus.data.Session
 import com.sprout.focus.data.SessionRepository
 import com.sprout.focus.data.Task
@@ -31,8 +32,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -60,6 +61,12 @@ class SproutViewModel(
         // потерянной сессии, иначе осталась бы навсегда — и молчащий
         // телефон человек связал бы с чем угодно, только не со Sprout
         viewModelScope.launch { sessions.syncQuiet() }
+
+        // Неделя эксперимента могла кончиться, пока человек не заходил.
+        // Итог считается по своим семи суткам и ждёт столько, сколько нужно:
+        // посчитанный, но никем не увиденный результат — это ровно то,
+        // ради чего затевался весь этап.
+        viewModelScope.launch { experiments.finishIfOver() }
     }
 
     val garden: StateFlow<Garden?> = gardenRepo.garden
@@ -239,22 +246,41 @@ class SproutViewModel(
      * Как эксперимент меняет поведение приложения.
      *
      * Отдельно от [experiment]: этим двум флагам нужен идущий эксперимент
-     * и больше ничего, а экраны «Сегодня» и «Новая задача» не должны
-     * тянуть за собой пересчёт гипотез.
+     * и закреплённое с прошлых недель, а экраны «Сегодня» и «Новая задача»
+     * не должны тянуть за собой пересчёт гипотез.
+     *
+     * Закреплённое действует так же, как эксперимент: подтвердившаяся
+     * гипотеза, которая ничего не меняет, не стоила потраченной недели.
      */
-    val shortSessionsOnly: StateFlow<Boolean> = experiments.running
-        .map { it?.hypothesis == Experiments.SHORTER }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    val shortSessionsOnly: StateFlow<Boolean> =
+        combine(experiments.running, experiments.keptChanges) { running, kept ->
+            running?.hypothesis == Experiments.SHORTER || kept.shortLengthsFirst
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
-    val planRequired: StateFlow<Boolean> = experiments.running
-        .map { it?.hypothesis == Experiments.IF_THEN }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    /** Не просто «обязателен ли план», но и почему: экран называет причину вслух. */
+    val planRule: StateFlow<PlanRule> =
+        combine(experiments.running, experiments.keptChanges) { running, kept ->
+            when {
+                running?.hypothesis == Experiments.IF_THEN -> PlanRule.EXPERIMENT
+                kept.planAlwaysRequired -> PlanRule.KEPT
+                else -> PlanRule.NONE
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlanRule.NONE)
 
     fun startExperiment(hypothesis: String) = viewModelScope.launch {
         experiments.start(hypothesis)
     }
 
     fun stopExperiment() = viewModelScope.launch { experiments.stop() }
+
+    /** Итог прочитан. [keep] — оставить изменение насовсем. */
+    fun resolveExperiment(keep: Boolean) = viewModelScope.launch {
+        experiments.resolve(keep)
+    }
+
+    /** Тумблер закреплённого изменения на экране «Я». */
+    fun setKeptChange(hypothesis: String, value: Boolean) =
+        experiments.setKept(hypothesis, value)
 
     // --- планы «если — то» ---
 

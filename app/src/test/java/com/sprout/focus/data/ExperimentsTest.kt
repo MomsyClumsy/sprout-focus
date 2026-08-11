@@ -222,6 +222,120 @@ class ExperimentsTest {
         }
     }
 
+    // --- итог недели ---
+
+    @Test
+    fun `мало наблюдений за неделю — вывода нет`() {
+        val result = Experiments.result(baselinePercent = 40, baselineCount = 20, done = 3, total = 4)
+        assertEquals(Experiments.OUTCOME_NOT_ENOUGH, result.outcome)
+    }
+
+    /**
+     * Неделю сравнивать не с чем — и это тот же случай, что «данных мало».
+     * Иначе первая же неделя человека, у которого до неё ничего не было,
+     * выдала бы «стало лучше на 75 пунктов» из воздуха.
+     */
+    @Test
+    fun `сравнивать не с чем — вывода тоже нет`() {
+        val result = Experiments.result(baselinePercent = 0, baselineCount = 2, done = 7, total = 8)
+        assertEquals(Experiments.OUTCOME_NOT_ENOUGH, result.outcome)
+    }
+
+    @Test
+    fun `стало заметно лучше — гипотеза подтвердилась`() {
+        val result = Experiments.result(baselinePercent = 43, baselineCount = 12, done = 8, total = 10)
+        assertEquals(Experiments.OUTCOME_CONFIRMED, result.outcome)
+        assertEquals(80, result.resultPercent)
+        assertEquals(10, result.observations)
+    }
+
+    @Test
+    fun `разница меньше порога — это шум, а не результат`() {
+        val result = Experiments.result(baselinePercent = 50, baselineCount = 12, done = 6, total = 10)
+        assertEquals(Experiments.OUTCOME_NO_EFFECT, result.outcome)
+    }
+
+    /** Ровно на пороге — уже вывод: иначе порог не значил бы ничего. */
+    @Test
+    fun `ровно пятнадцать пунктов — уже подтверждение`() {
+        val result = Experiments.result(baselinePercent = 50, baselineCount = 12, done = 13, total = 20)
+        assertEquals(65, result.resultPercent)
+        assertEquals(Experiments.OUTCOME_CONFIRMED, result.outcome)
+    }
+
+    @Test
+    fun `стало заметно хуже — это отдельный ответ`() {
+        val result = Experiments.result(baselinePercent = 70, baselineCount = 12, done = 3, total = 10)
+        assertEquals(Experiments.OUTCOME_WORSE, result.outcome)
+    }
+
+    @Test
+    fun `цифры итога не спотыкаются на нуле и единице`() {
+        assertEquals(
+            "Дошли до конца: 0 из 1.",
+            Experiments.resultNumbers(Experiments.SHORTER, 0, 1, 43, 2),
+        )
+        assertEquals(
+            "Пока заходов не было.",
+            Experiments.resultNumbers(Experiments.SHORTER, 0, 0, 43, 2),
+        )
+        assertEquals(
+            "Дошли до конца: 1 из 1. Раньше до конца доходило 43% заходов.",
+            Experiments.resultNumbers(Experiments.SHORTER, 1, 1, 43, 12),
+        )
+    }
+
+    /** Слабый базовый уровень не притворяется цифрой, с которой сравнивают. */
+    @Test
+    fun `базовый уровень из двух наблюдений в итог не идёт`() {
+        val text = Experiments.resultNumbers(Experiments.SHORTER, 8, 10, 43, 2)
+        assertTrue(text, !text.contains("43"))
+    }
+
+    @Test
+    fun `у каждого исхода есть заголовок и объяснение`() {
+        val outcomes = listOf(
+            Experiments.OUTCOME_CONFIRMED,
+            Experiments.OUTCOME_NO_EFFECT,
+            Experiments.OUTCOME_WORSE,
+            Experiments.OUTCOME_NOT_ENOUGH,
+        )
+        for (key in listOf(Experiments.SHORTER, Experiments.IF_THEN)) {
+            for (outcome in outcomes) {
+                assertTrue(Experiments.resultTitle(outcome).isNotBlank())
+                assertTrue(Experiments.resultMeaning(key, outcome, 10).isNotBlank())
+            }
+        }
+    }
+
+    /**
+     * Итог — самый громкий текст приложения: он говорит человеку, какой он.
+     * Тем более здесь нельзя ни упрекать, ни радоваться за него вслух.
+     */
+    @Test
+    fun `ни одна формулировка итога не упрекает`() {
+        val forbidden = listOf("должна", "должен", "обещал", "провал", "лень", "не смогла", "опять")
+        val outcomes = listOf(
+            Experiments.OUTCOME_CONFIRMED,
+            Experiments.OUTCOME_NO_EFFECT,
+            Experiments.OUTCOME_WORSE,
+            Experiments.OUTCOME_NOT_ENOUGH,
+        )
+        val texts = listOf(Experiments.SHORTER, Experiments.IF_THEN).flatMap { key ->
+            outcomes.flatMap { outcome ->
+                listOf(Experiments.resultTitle(outcome), Experiments.resultMeaning(key, outcome, 6))
+            } + Experiments.keepText(key) + Experiments.keptLabel(key) +
+                Experiments.resultNumbers(key, 3, 8, 40, 12)
+        }
+
+        for (text in texts) {
+            val lower = text.lowercase()
+            for (word in forbidden) {
+                assertTrue("«$word» в тексте: $text", !lower.contains(word))
+            }
+        }
+    }
+
     @Test
     fun `у каждой гипотезы сказано, что изменится и что посчитаем`() {
         for (key in listOf(Experiments.SHORTER, Experiments.IF_THEN)) {
