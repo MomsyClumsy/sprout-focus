@@ -15,12 +15,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -124,6 +126,13 @@ fun PlanFields(
             initialMinute = start % 60,
             is24Hour = true,
         )
+
+        // Цифрами — по умолчанию. Человек знает, что ему нужно «15:17»,
+        // и на циферблате ему приходится это время искать: сначала попасть
+        // в час, потом в минуту с шагом в градус. Циферблат остаётся рядом,
+        // кнопкой, — он удобен, когда время выбирают, а не вспоминают.
+        var byKeyboard by rememberSaveable { mutableStateOf(true) }
+
         Dialog(onDismissRequest = { pickerOpen = false }) {
             Surface(
                 shape = MaterialTheme.shapes.extraLarge,
@@ -135,10 +144,22 @@ fun PlanFields(
                 ) {
                     Text("Во сколько напомнить?", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(16.dp))
-                    TimePicker(state = state)
+
+                    if (byKeyboard) TimeInput(state = state) else TimePicker(state = state)
+
+                    // Переключатель отдельной строкой: втроём в одном ряду
+                    // кнопки не помещаются, и «Готово» переносится по слогам
+                    Row(Modifier.fillMaxWidth()) {
+                        TextButton(onClick = { byKeyboard = !byKeyboard }) {
+                            Text(
+                                if (byKeyboard) "Выбрать на циферблате" else "Ввести цифрами",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                     Row(
                         Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(onClick = { pickerOpen = false }) { Text("Отмена") }
                         TextButton(onClick = {
