@@ -39,7 +39,7 @@ object PlanNotifications {
                 "Напоминания по плану",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Приходит в момент, который ты сама назначила"
+                description = "Приходит в момент, который ты назначишь"
                 enableVibration(true)
             }
         )

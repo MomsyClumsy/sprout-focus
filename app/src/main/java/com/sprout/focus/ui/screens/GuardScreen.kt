@@ -185,7 +185,7 @@ private fun BarrierSection(
     Spacer(Modifier.height(8.dp))
     Text(
         "Пока идёт сессия, при открытии выбранных приложений Sprout покажет " +
-            "экран с напоминанием, за чем ты села. Пройти можно всегда — " +
+            "экран с напоминанием, ради чего ты здесь. Пройти можно всегда — " +
             "барьер нужен, чтобы это перестало происходить на автопилоте.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,

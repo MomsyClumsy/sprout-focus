@@ -16,12 +16,15 @@ import com.sprout.focus.data.ExperimentRepository
 import com.sprout.focus.data.ExperimentState
 import com.sprout.focus.data.Experiments
 import com.sprout.focus.data.GardenRepository
+import com.sprout.focus.data.Gender
 import com.sprout.focus.data.GuardRepository
 import com.sprout.focus.data.InsightsRepository
 import com.sprout.focus.data.InstalledApp
 import com.sprout.focus.data.MeState
 import com.sprout.focus.data.PlanRepository
 import com.sprout.focus.data.PlanRule
+import com.sprout.focus.data.ProfileRepository
+import com.sprout.focus.data.Voice
 import com.sprout.focus.data.Session
 import com.sprout.focus.data.SessionRepository
 import com.sprout.focus.data.Task
@@ -54,6 +57,7 @@ class SproutViewModel(
     private val guard: GuardRepository,
     private val experiments: ExperimentRepository,
     private val backups: BackupRepository,
+    private val profile: ProfileRepository,
 ) : ViewModel() {
 
     init {
@@ -340,6 +344,30 @@ class SproutViewModel(
         sessions.finish(completed, rating, interruptions, note)
     }
 
+    // --- знакомство и обращение ---
+
+    private val _voice = MutableStateFlow(profile.voice)
+    val voice: StateFlow<Voice> = _voice
+
+    /** Показывать ли знакомство: только пока человек его не прошёл. */
+    private val _needsWelcome = MutableStateFlow(!profile.metPerson)
+    val needsWelcome: StateFlow<Boolean> = _needsWelcome
+
+    fun saveVoice(name: String?, gender: Gender) {
+        val voice = Voice(name = name?.trim()?.takeIf { it.isNotEmpty() }, gender = gender)
+        profile.voice = voice
+        _voice.value = voice
+    }
+
+    /**
+     * Знакомство закончено — даже если человек ничего о себе не сказал.
+     * Спрашивать во второй раз значило бы не услышать первый отказ.
+     */
+    fun finishWelcome() {
+        profile.metPerson = true
+        _needsWelcome.value = false
+    }
+
     // --- копия данных ---
 
     private val _backup = MutableStateFlow(BackupUiState())
@@ -416,6 +444,7 @@ class SproutViewModel(
                 SproutViewModel(
                     app, app.repository, app.sessions, app.plans,
                     app.garden, app.insights, app.guard, app.experiments, app.backups,
+                    app.profile,
                 )
             }
         }

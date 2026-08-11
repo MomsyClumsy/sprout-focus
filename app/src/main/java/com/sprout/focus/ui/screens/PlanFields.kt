@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.sprout.focus.data.Reminder
 import com.sprout.focus.data.Task
+import com.sprout.focus.ui.LocalVoice
 import kotlinx.coroutines.delay
 
 /**
@@ -86,13 +87,10 @@ fun PlanFields(
             value = ifTrigger,
             onValueChange = onIfTrigger,
             label = { Text("Сделаю первый шаг, если…") },
+            // Пример — внутри поля, где его видно до ввода, а не под ним:
+            // подпись снизу человек читает уже после того, как написал,
+            // и на формулировку она не влияет
             placeholder = { Text("попью чай") },
-            // Примеры, а не объяснение: зацепка — вещь, которую проще узнать
-            // в чужой, чем придумать с нуля. Все четыре про обычный день
-            // и ни одна не про «правильный распорядок»
-            supportingText = {
-                Text("Например: попью чай · сяду за стол · закончится созвон · отведу ребёнка")
-            },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -157,7 +155,11 @@ fun PlanFields(
             // слежка. Значит и обещать нечего, кроме как быть на виду
             Text(
                 "Напоминания не будет: приложение не знает, когда это случится. " +
-                    "План будет на виду в задаче, а начнёшь ты сама.",
+                    LocalVoice.current.say(
+                        feminine = "План будет на виду в задаче, а начнёшь ты сама.",
+                        masculine = "План будет на виду в задаче, а начнёшь ты сам.",
+                        neutral = "План будет на виду в задаче, а начинать тебе.",
+                    ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

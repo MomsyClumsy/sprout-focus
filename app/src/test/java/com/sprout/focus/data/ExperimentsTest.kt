@@ -174,8 +174,10 @@ class ExperimentsTest {
     fun `строка хода не спотыкается на нуле и единице`() {
         assertEquals("Дошли до конца: 0 из 1", Experiments.progressText(0, 1, Experiments.SHORTER))
         assertEquals("Дошли до конца: 1 из 1", Experiments.progressText(1, 1, Experiments.SHORTER))
+        // Безлично: «за которые ты села» пришлось бы держать в трёх родах,
+        // а число тут важнее того, кто эти задачи начинал
         assertEquals(
-            "Задач, за которые ты села: 0 из 1",
+            "Начато задач: 0 из 1",
             Experiments.progressText(0, 1, Experiments.IF_THEN),
         )
     }

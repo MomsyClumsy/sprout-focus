@@ -7,6 +7,7 @@ import com.sprout.focus.data.GardenRepository
 import com.sprout.focus.data.GuardRepository
 import com.sprout.focus.data.InsightsRepository
 import com.sprout.focus.data.PlanRepository
+import com.sprout.focus.data.ProfileRepository
 import com.sprout.focus.data.SessionRepository
 import com.sprout.focus.data.SproutDatabase
 import com.sprout.focus.data.TaskRepository
@@ -27,6 +28,7 @@ class SproutApplication : Application() {
     val plans by lazy { PlanRepository(database.dao(), this) }
     val insights by lazy { InsightsRepository(database.dao()) }
     val experiments by lazy { ExperimentRepository(database.dao(), this) }
+    val profile by lazy { ProfileRepository(this) }
     val backups by lazy { BackupRepository(database.dao(), guard, experiments, plans, this) }
 
     override fun onCreate() {

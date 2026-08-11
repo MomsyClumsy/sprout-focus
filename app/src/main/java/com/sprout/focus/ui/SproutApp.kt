@@ -12,6 +12,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,6 +39,7 @@ import com.sprout.focus.focusguard.FocusGuard
 import com.sprout.focus.focusguard.QuietMode
 import com.sprout.focus.plan.OpenRequest
 import com.sprout.focus.ui.screens.BackupScreen
+import com.sprout.focus.ui.screens.WelcomeScreen
 import com.sprout.focus.ui.screens.TaskFormScreen
 import com.sprout.focus.ui.screens.CantStartScreen
 import com.sprout.focus.ui.screens.ExperimentScreen
@@ -91,6 +93,19 @@ fun SproutApp(
     onOpeningHandled: () -> Unit = {},
     vm: SproutViewModel = viewModel(factory = SproutViewModel.Factory),
 ) {
+    // Обращение раздаётся всем экранам сразу: оно всплывает в десятке мест,
+    // и протаскивать его параметром через каждый экран значило бы менять
+    // подписи функций ради одного слова
+    val voice by vm.voice.collectAsState()
+    CompositionLocalProvider(LocalVoice provides voice) { SproutContent(vm, opening, onOpeningHandled) }
+}
+
+@Composable
+private fun SproutContent(
+    vm: SproutViewModel,
+    opening: OpenRequest?,
+    onOpeningHandled: () -> Unit,
+) {
     val context = LocalContext.current
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -137,6 +152,19 @@ fun SproutApp(
         if (s != null && currentRoute != SESSION && currentRoute != SESSION_DONE) {
             navController.navigate(SESSION)
         }
+    }
+
+    // Знакомство идёт до всего остального и не имеет вкладок: пока человек
+    // с приложением не познакомился, показывать ему четыре раздела не за чем
+    val needsWelcome by vm.needsWelcome.collectAsState()
+    if (needsWelcome) {
+        WelcomeScreen(
+            onDone = { name, gender ->
+                vm.saveVoice(name, gender)
+                vm.finishWelcome()
+            }
+        )
+        return
     }
 
     Scaffold(
