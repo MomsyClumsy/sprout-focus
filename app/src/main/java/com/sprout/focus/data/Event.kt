@@ -22,6 +22,7 @@ data class Event(
 object EventType {
     const val TASK_CREATED = "task_created"
     const val TASK_SELECTED = "task_selected"
+    const val TASK_EDITED = "task_edited"
     const val TASK_COMPLETED = "task_completed"
     const val TASK_DROPPED = "task_dropped"
 

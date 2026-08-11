@@ -26,15 +26,18 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.sprout.focus.R
+import com.sprout.focus.data.PlanRule
 import com.sprout.focus.focusguard.FocusGuard
 import com.sprout.focus.focusguard.QuietMode
 import com.sprout.focus.plan.OpenRequest
-import com.sprout.focus.ui.screens.AddTaskScreen
+import com.sprout.focus.ui.screens.TaskFormScreen
 import com.sprout.focus.ui.screens.CantStartScreen
 import com.sprout.focus.ui.screens.ExperimentScreen
 import com.sprout.focus.ui.screens.GardenScreen
@@ -50,6 +53,10 @@ private const val TASKS = "tasks"
 private const val GARDEN = "garden"
 private const val ME = "me"
 private const val ADD = "add"
+private const val EDIT = "edit"
+
+/** Маршрут правки — с аргументом, поэтому у него два вида: шаблон и адрес. */
+private const val EDIT_ROUTE = "$EDIT/{taskId}"
 private const val SESSION = "session"
 private const val SESSION_DONE = "session_done"
 private const val CANT_START = "cant_start"
@@ -71,7 +78,10 @@ private val tabs = listOf(
     Tab(ME, R.drawable.ic_tab_me, "Я"),
 )
 
-private val fullScreenRoutes = setOf(ADD, SESSION, SESSION_DONE, CANT_START)
+// Именно шаблон, а не «edit»: currentRoute у экрана с аргументом выглядит
+// как «edit/{taskId}», и по короткому имени сравнение молча не сработает —
+// нижняя панель останется на экране, который задуман полноэкранным
+private val fullScreenRoutes = setOf(ADD, EDIT_ROUTE, SESSION, SESSION_DONE, CANT_START)
 
 @Composable
 fun SproutApp(
@@ -173,6 +183,7 @@ fun SproutApp(
                         vm.startSession(mode, planned)
                     },
                     onCantStart = { navController.navigate(CANT_START) },
+                    onOpenTask = { navController.navigate("$EDIT/$it") },
                     shortOnly = shortOnly,
                 )
             }
@@ -183,9 +194,7 @@ fun SproutApp(
                     onMakeCurrent = { vm.makeCurrent(it) },
                     onComplete = { vm.complete(it) },
                     onDrop = { vm.drop(it) },
-                    onSavePlan = { id, ifTrigger, thenAction, minute, mask ->
-                        vm.savePlan(id, ifTrigger, thenAction, minute, mask)
-                    },
+                    onOpenTask = { navController.navigate("$EDIT/$it") },
                 )
             }
             composable(GARDEN) { GardenScreen(garden, grownCount) }
@@ -243,7 +252,7 @@ fun SproutApp(
             }
 
             composable(ADD) {
-                AddTaskScreen(
+                TaskFormScreen(
                     onSave = { draft ->
                         vm.addTask(draft)
                         navController.popBackStack()
@@ -251,6 +260,32 @@ fun SproutApp(
                     onCancel = { navController.popBackStack() },
                     planRule = planRule,
                 )
+            }
+
+            composable(
+                route = EDIT_ROUTE,
+                arguments = listOf(navArgument("taskId") { type = NavType.LongType }),
+            ) { entry ->
+                val taskId = entry.arguments?.getLong("taskId") ?: 0L
+                val task = tasks.firstOrNull { it.id == taskId }
+                if (task == null) {
+                    // Задачу могли завершить или бросить с другого экрана,
+                    // пока эта была открыта: возвращаемся молча
+                    LaunchedEffect(Unit) { navController.popBackStack() }
+                } else {
+                    TaskFormScreen(
+                        onSave = { draft ->
+                            vm.editTask(taskId, draft)
+                            navController.popBackStack()
+                        },
+                        onCancel = { navController.popBackStack() },
+                        existing = task,
+                        // У уже созданной задачи план не требуем даже во время
+                        // эксперимента: он про то, как заводят новые задачи,
+                        // а не про право поправить опечатку в старой
+                        planRule = PlanRule.NONE,
+                    )
+                }
             }
 
             composable(CANT_START) {

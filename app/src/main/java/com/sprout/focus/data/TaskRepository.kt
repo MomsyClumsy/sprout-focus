@@ -36,6 +36,30 @@ class TaskRepository(private val dao: SproutDao, private val context: Context) {
         return id
     }
 
+    /**
+     * Правка задачи.
+     *
+     * Меняется всё, кроме плана и напоминания: те живут в [PlanRepository],
+     * потому что вместе с ними меняется будильник в системе. Здесь только
+     * текст — и он же виден на виджете, поэтому виджет просим перерисоваться.
+     *
+     * Событие пишем без содержимого правки: что человек переписал название,
+     * знать полезно, а хранить обе версии его формулировок — уже слежка.
+     */
+    suspend fun updateTask(id: Long, draft: TaskDraft) {
+        val task = dao.getTask(id) ?: return
+        dao.updateTask(
+            task.copy(
+                title = draft.title.trim(),
+                firstStep = draft.firstStep.trim(),
+                copingPlan = draft.copingPlan?.trim()?.ifBlank { null },
+                whyItMatters = draft.whyItMatters?.trim()?.ifBlank { null },
+            )
+        )
+        dao.insertEvent(Event(type = EventType.TASK_EDITED, taskId = id))
+        SproutWidget.refresh(context)
+    }
+
     suspend fun makeCurrent(id: Long) {
         dao.makeCurrent(id)
         dao.insertEvent(Event(type = EventType.TASK_SELECTED, taskId = id))

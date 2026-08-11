@@ -17,26 +17,34 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sprout.focus.data.PlanRule
 import com.sprout.focus.data.Reminder
+import com.sprout.focus.data.Task
 import com.sprout.focus.data.TaskDraft
 
 /**
- * Создание задачи.
+ * Создание и правка задачи — одна и та же форма.
  *
  * Обязательны только название и первый шаг. План «если — то» лежит на виду,
  * но не обязателен: два принудительных поля — это трение ровно там, где
  * человек и так избегает. Зато позже аналитика честно сравнит,
  * насколько чаще начинаются задачи с планом.
+ *
+ * Править можно всё, включая название. Человек передумывает и делает
+ * опечатки, а задача — это то, что он видит каждый день: невозможность
+ * исправить свою же ошибку превращает её в ежедневный упрёк.
+ *
+ * [existing] = null — заводим новую.
  */
 @Composable
-fun AddTaskScreen(
+fun TaskFormScreen(
     onSave: (TaskDraft) -> Unit,
     onCancel: () -> Unit,
+    existing: Task? = null,
     /**
      * Обязателен ли план «если — то» и почему.
      *
@@ -49,15 +57,28 @@ fun AddTaskScreen(
     planRule: PlanRule = PlanRule.NONE,
 ) {
     val planRequired = planRule != PlanRule.NONE
-    var title by remember { mutableStateOf("") }
-    var firstStep by remember { mutableStateOf("") }
-    var ifTrigger by remember { mutableStateOf("") }
-    var thenAction by remember { mutableStateOf("") }
-    var coping by remember { mutableStateOf("") }
-    var why by remember { mutableStateOf("") }
-    var minuteOfDay by remember { mutableStateOf<Int?>(null) }
-    var daysMask by remember { mutableIntStateOf(Reminder.ONE_OFF) }
-    var extrasOpen by remember { mutableStateOf(false) }
+
+    // rememberSaveable, а не remember: набранный текст должен пережить
+    // и поворот экрана, и уход в настройки за разрешением. Потерянный
+    // черновик задачи — это ровно то отвлечение, ради которого человек
+    // сюда и не вернётся (грабли №20)
+    var title by rememberSaveable(existing?.id) { mutableStateOf(existing?.title.orEmpty()) }
+    var firstStep by rememberSaveable(existing?.id) { mutableStateOf(existing?.firstStep.orEmpty()) }
+    var ifTrigger by rememberSaveable(existing?.id) { mutableStateOf(existing?.ifTrigger.orEmpty()) }
+    var thenAction by rememberSaveable(existing?.id) { mutableStateOf(existing?.thenAction.orEmpty()) }
+    var coping by rememberSaveable(existing?.id) { mutableStateOf(existing?.copingPlan.orEmpty()) }
+    var why by rememberSaveable(existing?.id) { mutableStateOf(existing?.whyItMatters.orEmpty()) }
+    var minuteOfDay by rememberSaveable(existing?.id) {
+        mutableStateOf(existing?.remindMinuteOfDay)
+    }
+    var daysMask by rememberSaveable(existing?.id) {
+        mutableIntStateOf(existing?.remindDaysMask ?: Reminder.ONE_OFF)
+    }
+    // У задачи, где эти поля уже заполнены, раздел открыт сразу: иначе
+    // человек их не увидит и решит, что они потерялись
+    var extrasOpen by rememberSaveable(existing?.id) {
+        mutableStateOf(!existing?.copingPlan.isNullOrBlank() || !existing?.whyItMatters.isNullOrBlank())
+    }
 
     val planFilled = ifTrigger.isNotBlank() && thenAction.isNotBlank()
     val canSave = title.isNotBlank() && firstStep.isNotBlank() && (!planRequired || planFilled)
@@ -68,7 +89,10 @@ fun AddTaskScreen(
             .verticalScroll(rememberScrollState())
             .padding(24.dp)
     ) {
-        Text("Новая задача", style = MaterialTheme.typography.headlineMedium)
+        Text(
+            if (existing == null) "Новая задача" else "Задача",
+            style = MaterialTheme.typography.headlineMedium,
+        )
         Spacer(Modifier.height(24.dp))
 
         OutlinedTextField(

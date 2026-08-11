@@ -1,5 +1,6 @@
 package com.sprout.focus.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,6 +45,8 @@ fun TodayScreen(
     onPickTask: () -> Unit,
     onStart: (mode: String, plannedSeconds: Int) -> Unit,
     onCantStart: () -> Unit,
+    /** Тап по карточке открывает задачу целиком — там правится и текст, и время. */
+    onOpenTask: (Long) -> Unit = {},
     /**
      * Длинные заходы — на шаг дальше.
      *
@@ -66,7 +69,7 @@ fun TodayScreen(
             currentTask != null ->
                 CurrentTask(
                     currentTask, stage, streak, onStart, onCantStart, onPickTask,
-                    hasOtherTasks, shortOnly,
+                    hasOtherTasks, shortOnly, onOpenTask,
                 )
             hasOtherTasks -> NothingChosen(stage, onPickTask)
             else -> Empty(onAddTask)
@@ -101,6 +104,7 @@ private fun CurrentTask(
     onPickTask: () -> Unit,
     hasOtherTasks: Boolean,
     shortOnly: Boolean,
+    onOpenTask: (Long) -> Unit,
 ) {
     // 20 минут по умолчанию. Классические 25 в РКИ 2025 быстрее растили
     // усталость, а жёсткая структура сильнее роняла мотивацию, чем свобода.
@@ -111,8 +115,12 @@ private fun CurrentTask(
 
     Spacer(Modifier.height(32.dp))
 
+    // Карточка открывается по тапу: человек смотрит на задачу именно здесь,
+    // и искать, где её поправить, он пойдёт сюда же — а не на другую вкладку
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onOpenTask(task.id) },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         )

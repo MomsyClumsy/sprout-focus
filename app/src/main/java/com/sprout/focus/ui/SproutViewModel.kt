@@ -120,6 +120,25 @@ class SproutViewModel(
         }
     }
 
+    /**
+     * Сохранить правку задачи.
+     *
+     * Две записи, а не одна: текст задачи и напоминание живут в разных
+     * репозиториях, потому что у второго есть будильник в системе.
+     * [PlanRepository.savePlan] сам снимет старый будильник и поставит
+     * новый — время могло поменяться.
+     */
+    fun editTask(id: Long, draft: TaskDraft) = viewModelScope.launch {
+        repo.updateTask(id, draft)
+        plans.savePlan(
+            taskId = id,
+            ifTrigger = draft.ifTrigger,
+            thenAction = draft.thenAction,
+            minuteOfDay = draft.remindMinuteOfDay,
+            daysMask = draft.remindDaysMask,
+        )
+    }
+
     fun makeCurrent(id: Long) = viewModelScope.launch { repo.makeCurrent(id) }
     fun complete(id: Long) = viewModelScope.launch { repo.complete(id) }
     fun drop(id: Long) = viewModelScope.launch { repo.drop(id) }
@@ -281,18 +300,6 @@ class SproutViewModel(
     /** Тумблер закреплённого изменения на экране «Я». */
     fun setKeptChange(hypothesis: String, value: Boolean) =
         experiments.setKept(hypothesis, value)
-
-    // --- планы «если — то» ---
-
-    fun savePlan(
-        taskId: Long,
-        ifTrigger: String?,
-        thenAction: String?,
-        minuteOfDay: Int?,
-        daysMask: Int,
-    ) = viewModelScope.launch {
-        plans.savePlan(taskId, ifTrigger, thenAction, minuteOfDay, daysMask)
-    }
 
     /**
      * Пришли из уведомления.

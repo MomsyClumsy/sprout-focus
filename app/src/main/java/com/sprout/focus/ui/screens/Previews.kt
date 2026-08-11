@@ -79,19 +79,19 @@ private fun TodayNothingChosen() = SproutTheme(darkTheme = false) {
 @Preview(name = "Задачи · светлая", showBackground = true)
 @Composable
 private fun TasksLight() = SproutTheme(darkTheme = false) {
-    TasksScreen(sampleTasks, {}, {}, {}, {}, { _, _, _, _, _ -> })
+    TasksScreen(sampleTasks, {}, {}, {}, {}, {})
 }
 
 @Preview(name = "Задачи · тёмная", showBackground = true)
 @Composable
 private fun TasksDark() = SproutTheme(darkTheme = true) {
-    TasksScreen(sampleTasks, {}, {}, {}, {}, { _, _, _, _, _ -> })
+    TasksScreen(sampleTasks, {}, {}, {}, {}, {})
 }
 
 @Preview(name = "Задачи · пусто", showBackground = true)
 @Composable
 private fun TasksEmpty() = SproutTheme(darkTheme = false) {
-    TasksScreen(emptyList(), {}, {}, {}, {}, { _, _, _, _, _ -> })
+    TasksScreen(emptyList(), {}, {}, {}, {}, {})
 }
 
 // --- Создание задачи ---
@@ -99,7 +99,7 @@ private fun TasksEmpty() = SproutTheme(darkTheme = false) {
 @Preview(name = "Новая задача", showBackground = true)
 @Composable
 private fun AddTask() = SproutTheme(darkTheme = false) {
-    AddTaskScreen({}, {})
+    TaskFormScreen({}, {})
 }
 
 // --- Сессия ---
