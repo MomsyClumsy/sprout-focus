@@ -1,6 +1,7 @@
 package com.sprout.focus.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,7 @@ import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,9 +28,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.sprout.focus.data.Reminder
+import kotlinx.coroutines.delay
 
 /**
  * План «если — то» и напоминание к нему.
@@ -132,6 +138,8 @@ fun PlanFields(
         // в час, потом в минуту с шагом в градус. Циферблат остаётся рядом,
         // кнопкой, — он удобен, когда время выбирают, а не вспоминают.
         var byKeyboard by rememberSaveable { mutableStateOf(true) }
+        val hourFocus = remember { FocusRequester() }
+        val keyboard = LocalSoftwareKeyboardController.current
 
         Dialog(onDismissRequest = { pickerOpen = false }) {
             Surface(
@@ -145,7 +153,22 @@ fun PlanFields(
                     Text("Во сколько напомнить?", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(16.dp))
 
-                    if (byKeyboard) TimeInput(state = state) else TimePicker(state = state)
+                    if (byKeyboard) {
+                        // Клавиатуру поднимаем сами. Поле часов иначе ждёт
+                        // тапа: диалог открылся, цифры видны, а набирать
+                        // их не получается — и человек решает, что ввод
+                        // сломан, хотя не хватало одного касания
+                        Box(Modifier.focusRequester(hourFocus)) { TimeInput(state = state) }
+                        LaunchedEffect(Unit) {
+                            // Пауза на укладку диалога: до неё запрос фокуса
+                            // уходит в никуда
+                            delay(150)
+                            runCatching { hourFocus.requestFocus() }
+                            keyboard?.show()
+                        }
+                    } else {
+                        TimePicker(state = state)
+                    }
 
                     // Переключатель отдельной строкой: втроём в одном ряду
                     // кнопки не помещаются, и «Готово» переносится по слогам
