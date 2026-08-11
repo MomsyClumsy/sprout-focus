@@ -96,19 +96,28 @@ fun TaskFormScreen(
 
         Spacer(Modifier.height(20.dp))
 
+        // Название поля прежнее, а пример — от первого лица: ниже он встанет
+        // во вторую половину плана («…то открою файл»), и в какой форме
+        // человек написал, в такой фраза и прочитается. Переписать «открыть»
+        // в «открою» приложение не может: в русском это спряжение,
+        // а не приписанная буква
         OutlinedTextField(
             value = firstStep,
             onValueChange = { firstStep = it },
             label = { Text("Первый шаг") },
+            placeholder = { Text("открою файл и напишу заголовок") },
             supportingText = {
-                Text("Настолько маленький, чтобы отказаться было неловко. Например: «открыть файл и написать заголовок»")
+                Text(
+                    "С чего начнёшь? Настолько маленькое, чтобы отказаться было неловко. " +
+                        "Например: «открою файл и напишу заголовок»"
+                )
             },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(Modifier.height(24.dp))
 
-        Text("Когда сделаешь первый шаг?", style = MaterialTheme.typography.titleLarge)
+        Text("Привяжи первый шаг к моменту", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(4.dp))
         Text(
             when (planRule) {
@@ -119,7 +128,7 @@ fun TaskFormScreen(
                     "Обязательное поле: ты оставила так после эксперимента. " +
                         "Выключить можно на экране «Я»"
                 PlanRule.NONE ->
-                    "Необязательно, но задачи с таким планом начинают заметно чаще"
+                    "Необязательно, но задачи с таким планом начинаются заметно чаще"
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant

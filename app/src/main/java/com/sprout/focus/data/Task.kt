@@ -105,12 +105,55 @@ data class Task(
         const val STATUS_DROPPED = "dropped"
 
         /**
+         * План по частям: слова человека отдельно от слов приложения.
+         *
+         * Форма выделяет первые курсивом, чтобы план читался как одна мысль,
+         * а не как два заполненных поля. Части и склейка живут в одном месте:
+         * разъехаться они могут только здесь, и здесь же это ловит тест.
+         */
+        data class PlanParts(val trigger: String, val promise: String) {
+            val text: String get() = "Если $trigger, то $promise"
+        }
+
+        /**
          * Та же строка, но для формы, где задачи ещё нет: человек видит
          * свой план целиком до того, как нажмёт «Сохранить».
+         *
+         * «Если — то» целиком, а не тире между половинами: связка читается
+         * как одна мысль, а не как два поля, поставленные рядом. Слова при
+         * этом остаются авторскими — приложение не склоняет чужой текст
+         * и не переписывает «открыть» в «открою».
          */
         fun planLine(ifTrigger: String?, promise: String): String? =
+            planParts(ifTrigger, promise)?.text
+
+        /**
+         * Та же фраза, но по частям: слова человека отдельно от слов
+         * приложения. Форма выделяет первые курсивом, чтобы план читался
+         * как одна мысль, а не как два заполненных поля.
+         *
+         * Части и склейка живут вместе намеренно: разъехаться они могут
+         * только здесь, и здесь же это ловит тест.
+         */
+        fun planParts(ifTrigger: String?, promise: String): PlanParts? =
             ifTrigger?.trim()?.takeIf { it.isNotEmpty() && promise.isNotBlank() }?.let { trigger ->
-                "${trigger.replaceFirstChar(Char::uppercaseChar)} — $promise"
+                PlanParts(
+                    trigger = lowerFirst(trigger),
+                    promise = lowerFirst(promise.trim()),
+                )
             }
+
+        /**
+         * Опустить первую букву — но не у аббревиатур.
+         *
+         * «Открыть документ» в середине фразы выглядит опечаткой, а «PDF»,
+         * превращённый в «pDF», — тем более. Слово целиком из заглавных
+         * человек написал нарочно.
+         */
+        private fun lowerFirst(text: String): String {
+            val firstWord = text.substringBefore(' ')
+            if (firstWord.length > 1 && firstWord == firstWord.uppercase()) return text
+            return text.replaceFirstChar(Char::lowercaseChar)
+        }
     }
 }
