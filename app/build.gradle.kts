@@ -34,8 +34,8 @@ android {
         targetSdk = 37
         // versionCode растёт на единицу с каждым выпуском: по нему Android
         // понимает, что новее. versionName — то, что видит человек
-        versionCode = 4
-        versionName = "1.2"
+        versionCode = 5
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
