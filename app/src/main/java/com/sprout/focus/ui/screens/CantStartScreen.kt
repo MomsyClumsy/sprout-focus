@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.sprout.focus.data.CantStartReason
 import com.sprout.focus.data.CantStartResolution
 import com.sprout.focus.data.Session
+import com.sprout.focus.ui.LocalVoice
 import com.sprout.focus.ui.theme.SproutTheme
 
 /**
@@ -116,7 +117,13 @@ private val options = listOf(
 
 @Composable
 private fun Chooser(postponeCount: Int, onPick: (String) -> Unit) {
-    Text("Что мешает?", style = MaterialTheme.typography.headlineMedium)
+    // По имени — именно здесь. Это самый тяжёлый экран приложения: человек
+    // пришёл сказать, что не может начать, и обращение к нему по имени
+    // делает разговор разговором, а не разбором обращения в поддержку
+    Text(
+        LocalVoice.current.ask("Что мешает?"),
+        style = MaterialTheme.typography.headlineMedium,
+    )
     Spacer(Modifier.height(6.dp))
     Text(
         "Здесь нет неправильных ответов",

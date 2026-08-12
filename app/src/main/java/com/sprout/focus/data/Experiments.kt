@@ -211,7 +211,10 @@ object Experiments {
 
     /** «Обычно у тебя …» — цифра до начала эксперимента, чтобы было с чем сравнить. */
     fun baselineText(baselinePercent: Int, hypothesis: String): String = when (hypothesis) {
-        IF_THEN -> "Раньше ты садилась за $baselinePercent% задач."
+        // Безлично и тем же словом, что в progressText: «Начато задач» выше —
+        // «Раньше начиналось» здесь. Иначе две строки на одном экране
+        // считают, кажется, разное
+        IF_THEN -> "Раньше начиналось $baselinePercent% задач."
         else -> "Раньше до конца доходило $baselinePercent% заходов."
     }
 

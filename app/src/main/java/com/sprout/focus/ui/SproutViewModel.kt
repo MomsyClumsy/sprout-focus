@@ -25,6 +25,7 @@ import com.sprout.focus.data.PlanRepository
 import com.sprout.focus.data.PlanRule
 import com.sprout.focus.data.ProfileRepository
 import com.sprout.focus.data.Voice
+import com.sprout.focus.data.WelcomeMode
 import com.sprout.focus.data.Session
 import com.sprout.focus.data.SessionRepository
 import com.sprout.focus.data.Task
@@ -349,9 +350,28 @@ class SproutViewModel(
     private val _voice = MutableStateFlow(profile.voice)
     val voice: StateFlow<Voice> = _voice
 
-    /** Показывать ли знакомство: только пока человек его не прошёл. */
-    private val _needsWelcome = MutableStateFlow(!profile.metPerson)
-    val needsWelcome: StateFlow<Boolean> = _needsWelcome
+    /**
+     * Показывать ли знакомство и в каком виде.
+     *
+     * Обычный запуск отвечает синхронно: `metPerson` лежит в настройках,
+     * и ждать нечего. [WelcomeMode.UNKNOWN] бывает только в первый запуск
+     * после установки или обновления — там один запрос к базе, зато экран
+     * не успевает моргнуть первой страницей и перескочить на четвёртую.
+     */
+    private val _welcome = MutableStateFlow(
+        if (profile.metPerson) WelcomeMode.NONE else WelcomeMode.UNKNOWN
+    )
+    val welcome: StateFlow<WelcomeMode> = _welcome
+
+    init {
+        if (_welcome.value == WelcomeMode.UNKNOWN) viewModelScope.launch {
+            // Первый запуск после обновления — не первый запуск приложения.
+            // Тому, кто им уже пользуется, три страницы про замысел ни к чему:
+            // ему нужен только вопрос, который появился в этой версии
+            _welcome.value =
+                if (repo.hasHistory()) WelcomeMode.NAME_ONLY else WelcomeMode.FULL
+        }
+    }
 
     fun saveVoice(name: String?, gender: Gender) {
         val voice = Voice(name = name?.trim()?.takeIf { it.isNotEmpty() }, gender = gender)
@@ -365,7 +385,7 @@ class SproutViewModel(
      */
     fun finishWelcome() {
         profile.metPerson = true
-        _needsWelcome.value = false
+        _welcome.value = WelcomeMode.NONE
     }
 
     // --- копия данных ---
@@ -419,6 +439,9 @@ class SproutViewModel(
         val data = _backup.value.pending ?: return@launch
         _backup.update { it.copy(busy = true, pending = null) }
         val result = runCatching { backups.restore(data) }
+        // Имя пришло из файла вместе с задачами, но экраны читают его отсюда:
+        // без этой строки приложение обращалось бы по-старому до перезапуска
+        _voice.value = profile.voice
         _backup.update {
             it.copy(
                 busy = false,

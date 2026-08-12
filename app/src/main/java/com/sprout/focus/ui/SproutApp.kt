@@ -35,6 +35,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.sprout.focus.R
 import com.sprout.focus.data.PlanRule
+import com.sprout.focus.data.WelcomeMode
 import com.sprout.focus.focusguard.FocusGuard
 import com.sprout.focus.focusguard.QuietMode
 import com.sprout.focus.plan.OpenRequest
@@ -45,7 +46,9 @@ import com.sprout.focus.ui.screens.CantStartScreen
 import com.sprout.focus.ui.screens.ExperimentScreen
 import com.sprout.focus.ui.screens.GardenScreen
 import com.sprout.focus.ui.screens.GuardScreen
+import com.sprout.focus.ui.screens.HowItWorksScreen
 import com.sprout.focus.ui.screens.MeScreen
+import com.sprout.focus.ui.screens.ProfileScreen
 import com.sprout.focus.ui.screens.SessionDoneScreen
 import com.sprout.focus.ui.screens.SessionScreen
 import com.sprout.focus.ui.screens.TasksScreen
@@ -66,6 +69,8 @@ private const val CANT_START = "cant_start"
 private const val GUARD = "guard"
 private const val EXPERIMENT = "experiment"
 private const val BACKUP = "backup"
+private const val PROFILE = "profile"
+private const val HOW_IT_WORKS = "how_it_works"
 
 private data class Tab(
     val route: String,
@@ -125,14 +130,6 @@ private fun SproutContent(
     // Дошла ли сессия до конца или её остановили раньше — нужно экрану итога
     var finishedNaturally by remember { mutableStateOf(false) }
 
-    // Уведомления нужны для обратного отсчёта в шторке и сигнала об окончании
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        val launcher = rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { }
-        LaunchedEffect(Unit) { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }
-    }
-
     // Пришли по напоминанию. Ждём, пока задача станет текущей: иначе
     // разговор «не могу начать» откроется про другую задачу.
     LaunchedEffect(opening) {
@@ -156,15 +153,32 @@ private fun SproutContent(
 
     // Знакомство идёт до всего остального и не имеет вкладок: пока человек
     // с приложением не познакомился, показывать ему четыре раздела не за чем
-    val needsWelcome by vm.needsWelcome.collectAsState()
-    if (needsWelcome) {
-        WelcomeScreen(
-            onDone = { name, gender ->
-                vm.saveVoice(name, gender)
-                vm.finishWelcome()
-            }
-        )
+    val welcome by vm.welcome.collectAsState()
+    if (welcome != WelcomeMode.NONE) {
+        // UNKNOWN — ещё считаем, с чего начинать. Пустой кадр вместо
+        // первой страницы: перескочить с неё на четвёртую хуже, чем
+        // подождать один запрос к базе
+        if (welcome != WelcomeMode.UNKNOWN) {
+            WelcomeScreen(
+                nameOnly = welcome == WelcomeMode.NAME_ONLY,
+                onDone = { name, gender ->
+                    vm.saveVoice(name, gender)
+                    vm.finishWelcome()
+                }
+            )
+        }
         return
+    }
+
+    // Уведомления нужны для обратного отсчёта в шторке и сигнала об окончании.
+    // Спрашиваем после знакомства, а не во время: системный диалог, всплывший
+    // поверх первого экрана, просит разрешение раньше, чем человек понял,
+    // что это за приложение и зачем ему что-то разрешать
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val launcher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { }
+        LaunchedEffect(Unit) { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }
     }
 
     Scaffold(
@@ -233,6 +247,8 @@ private fun SproutContent(
                     state = me,
                     onOpenGuard = { navController.navigate(GUARD) },
                     onOpenBackup = { navController.navigate(BACKUP) },
+                    onOpenProfile = { navController.navigate(PROFILE) },
+                    onOpenHowItWorks = { navController.navigate(HOW_IT_WORKS) },
                     experiment = experiment,
                     onOpenExperiment = { navController.navigate(EXPERIMENT) },
                     onToggleKept = { hypothesis, value -> vm.setKeptChange(hypothesis, value) },
@@ -264,6 +280,21 @@ private fun SproutContent(
                     onCancelRestore = { vm.cancelRestore() },
                     suggestedName = vm.suggestedBackupName(),
                 )
+            }
+
+            composable(PROFILE) {
+                ProfileScreen(
+                    // Отсюда же, откуда и все экраны: провайдер наверху
+                    // подписан на vm.voice, и сохранённое возвращается сюда
+                    // тем же путём, каким расходится по остальным экранам
+                    voice = LocalVoice.current,
+                    onSave = { name, gender -> vm.saveVoice(name, gender) },
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(HOW_IT_WORKS) {
+                HowItWorksScreen(onBack = { navController.popBackStack() })
             }
 
             composable(GUARD) {

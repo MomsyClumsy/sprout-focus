@@ -25,12 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sprout.focus.ui.LocalVoice
 
 /**
  * Итог сессии.
  *
  * Все поля необязательны — это топливо для аналитики, а не экзамен.
- * «На чём остановилась» работает на эффект Зейгарник: записанная
+ * «На чём остановились» работает на эффект Зейгарник: записанная
  * середина мысли удешевляет возвращение к задаче завтра.
  */
 @Composable
@@ -58,8 +59,14 @@ fun SessionDoneScreen(
             style = MaterialTheme.typography.titleLarge
         )
         Spacer(Modifier.height(6.dp))
+        // Единственное место, где имя звучит само собой: заход кончился,
+        // и сказать про него есть что личного. В заголовок оно не идёт —
+        // «Марина, сессия закончилась» звучит как объявление по вокзалу
         Text(
-            if (minutes < 1) "Меньше минуты — тоже считается" else "$minutes ${minuteWord(minutes)} фокуса",
+            LocalVoice.current.ask(
+                if (minutes < 1) "Меньше минуты — тоже считается"
+                else "$minutes ${minuteWord(minutes)} фокуса"
+            ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -81,7 +88,7 @@ fun SessionDoneScreen(
 
         Spacer(Modifier.height(28.dp))
 
-        Text("Отвлекалась?", style = MaterialTheme.typography.titleLarge)
+        Text("Что-то отвлекало?", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(0 to "Нет", 1 to "Пару раз", 2 to "Постоянно").forEach { (value, label) ->
@@ -98,7 +105,7 @@ fun SessionDoneScreen(
         OutlinedTextField(
             value = note,
             onValueChange = { note = it },
-            label = { Text("На чём остановилась?") },
+            label = { Text("На чём остановились?") },
             supportingText = { Text("Запиши середину мысли — завтра будет легче вернуться") },
             modifier = Modifier.fillMaxWidth()
         )

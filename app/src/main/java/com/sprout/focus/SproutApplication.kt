@@ -29,7 +29,9 @@ class SproutApplication : Application() {
     val insights by lazy { InsightsRepository(database.dao()) }
     val experiments by lazy { ExperimentRepository(database.dao(), this) }
     val profile by lazy { ProfileRepository(this) }
-    val backups by lazy { BackupRepository(database.dao(), guard, experiments, plans, this) }
+    val backups by lazy {
+        BackupRepository(database.dao(), guard, experiments, plans, profile, this)
+    }
 
     override fun onCreate() {
         super.onCreate()

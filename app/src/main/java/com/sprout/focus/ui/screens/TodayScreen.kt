@@ -155,7 +155,7 @@ private fun CurrentTask(
             if (task.lastStoppedAt != null) {
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Остановилась на: ${task.lastStoppedAt}",
+                    "Остановились на: ${task.lastStoppedAt}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

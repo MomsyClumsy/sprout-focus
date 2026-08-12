@@ -52,6 +52,11 @@ object Backup {
             put("quietEnabled", data.settings.quietEnabled)
             put("keptShortFirst", data.settings.keptShortFirst)
             put("keptPlanRequired", data.settings.keptPlanRequired)
+            // Имя и обращение. Без них восстановленное приложение забывает,
+            // как разговаривать, — и человек, который только что вернул свои
+            // задачи, встречает чужой безличный голос
+            put("name", data.settings.name ?: JSONObject.NULL)
+            put("gender", data.settings.gender.name)
         })
 
         root.put("tasks", data.tasks.jsonArray(::taskJson))
@@ -101,6 +106,11 @@ object Backup {
                         quietEnabled = s?.optBoolean("quietEnabled") ?: false,
                         keptShortFirst = s?.optBoolean("keptShortFirst") ?: false,
                         keptPlanRequired = s?.optBoolean("keptPlanRequired") ?: false,
+                        // Копии, сделанные до 1.3, этих полей не знают —
+                        // и читаются как есть: версия формата не поднята,
+                        // потому что старый файл ничего не теряет
+                        name = s?.stringOrNull("name"),
+                        gender = Gender.of(s?.optString("gender")),
                     )
                 },
                 tasks = root.list("tasks", ::taskOf),
@@ -432,6 +442,10 @@ data class BackupSettings(
     val quietEnabled: Boolean = false,
     val keptShortFirst: Boolean = false,
     val keptPlanRequired: Boolean = false,
+    /** Имя человека — то же, что спрашивают при знакомстве. */
+    val name: String? = null,
+    /** Форма обращения. Неизвестный род — обычное значение, а не ошибка. */
+    val gender: Gender = Gender.UNKNOWN,
 )
 
 data class BackupData(

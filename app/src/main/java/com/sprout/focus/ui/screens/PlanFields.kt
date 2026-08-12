@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.sprout.focus.data.Phrases
 import com.sprout.focus.data.Reminder
 import com.sprout.focus.data.Task
 import com.sprout.focus.ui.LocalVoice
@@ -155,11 +156,7 @@ fun PlanFields(
             // слежка. Значит и обещать нечего, кроме как быть на виду
             Text(
                 "Напоминания не будет: приложение не знает, когда это случится. " +
-                    LocalVoice.current.say(
-                        feminine = "План будет на виду в задаче, а начнёшь ты сама.",
-                        masculine = "План будет на виду в задаче, а начнёшь ты сам.",
-                        neutral = "План будет на виду в задаче, а начинать тебе.",
-                    ),
+                    Phrases.startIsOnYou(LocalVoice.current),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -21,6 +21,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.sprout.focus.data.Phrases
 import com.sprout.focus.data.PlanRule
 import com.sprout.focus.data.Reminder
 import com.sprout.focus.data.Task
@@ -126,11 +127,7 @@ fun TaskFormScreen(
                     "На эту неделю — обязательное поле: идёт эксперимент, который " +
                         "как раз это и проверяет"
                 PlanRule.KEPT ->
-                    LocalVoice.current.say(
-                        feminine = "Обязательное поле: ты оставила так после эксперимента.",
-                        masculine = "Обязательное поле: ты оставил так после эксперимента.",
-                        neutral = "Обязательное поле: так осталось после эксперимента.",
-                    ) + " Выключить можно на экране «Я»"
+                    Phrases.planKept(LocalVoice.current) + " Выключить можно на экране «Я»"
                 PlanRule.NONE ->
                     "Необязательно, но задачи с таким планом начинаются заметно чаще"
             },

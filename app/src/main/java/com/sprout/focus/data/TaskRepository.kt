@@ -12,6 +12,9 @@ class TaskRepository(private val dao: SproutDao, private val context: Context) {
     val activeTasks = dao.observeActiveTasks()
     val currentTask = dao.observeCurrentTask()
 
+    /** Есть ли у приложения прошлое — см. [SproutDao.hasHistory]. */
+    suspend fun hasHistory(): Boolean = dao.hasHistory()
+
     /** Возвращает id созданной задачи — он нужен, чтобы повесить напоминание. */
     suspend fun addTask(draft: TaskDraft): Long {
         val task = Task(

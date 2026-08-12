@@ -27,6 +27,7 @@ class BackupRepository(
     private val guard: GuardRepository,
     private val experiments: ExperimentRepository,
     private val plans: PlanRepository,
+    private val profile: ProfileRepository,
     private val context: Context,
 ) {
 
@@ -74,6 +75,7 @@ class BackupRepository(
         guard.quietEnabled = data.settings.quietEnabled
         experiments.setKept(Experiments.SHORTER, data.settings.keptShortFirst)
         experiments.setKept(Experiments.IF_THEN, data.settings.keptPlanRequired)
+        profile.voice = Voice(name = data.settings.name, gender = data.settings.gender)
 
         plans.rescheduleAll()
         SproutWidget.refresh(context)
@@ -88,6 +90,8 @@ class BackupRepository(
             quietEnabled = guard.quietEnabled,
             keptShortFirst = experiments.keptChanges.value.shortLengthsFirst,
             keptPlanRequired = experiments.keptChanges.value.planAlwaysRequired,
+            name = profile.voice.name,
+            gender = profile.voice.gender,
         ),
         tasks = dao.allTasks(),
         events = dao.allEvents(),

@@ -24,6 +24,8 @@ class BackupTest {
             quietEnabled = false,
             keptShortFirst = true,
             keptPlanRequired = false,
+            name = "Марина",
+            gender = Gender.FEMININE,
         ),
         tasks = listOf(
             Task(
@@ -118,6 +120,36 @@ class BackupTest {
         assertTrue(after.tasks.isEmpty())
         assertTrue(after.events.isEmpty())
         assertNull(after.garden)
+    }
+
+    @Test
+    fun `имя и обращение переживают круг`() {
+        // Иначе человек, только что вернувший свои задачи из файла,
+        // встречает приложение, которое разучилось к нему обращаться
+        val after = Backup.decode(Backup.encode(sample()))
+        assertEquals("Марина", after.settings.name)
+        assertEquals(Gender.FEMININE, after.settings.gender)
+    }
+
+    @Test
+    fun `копия без имени не выдумывает его`() {
+        val after = Backup.decode(Backup.encode(BackupData()))
+        assertNull(after.settings.name)
+        assertEquals(Gender.UNKNOWN, after.settings.gender)
+    }
+
+    @Test
+    fun `копия из версии до 1_3 читается как есть`() {
+        // Поля профиля добавлены без повышения версии формата: старый файл
+        // ничего не теряет, а отказывать ему не за что — он полон
+        val old = """{"format":"sprout-backup","formatVersion":1,"schemaVersion":8,
+            "settings":{"barrierEnabled":true,"quietEnabled":false,
+            "keptShortFirst":false,"keptPlanRequired":true}}"""
+        val data = Backup.decode(old)
+        assertTrue(data.settings.barrierEnabled)
+        assertTrue(data.settings.keptPlanRequired)
+        assertNull(data.settings.name)
+        assertEquals(Gender.UNKNOWN, data.settings.gender)
     }
 
     @Test

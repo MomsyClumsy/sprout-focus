@@ -49,6 +49,8 @@ fun MeScreen(
     state: MeState,
     onOpenGuard: () -> Unit = {},
     onOpenBackup: () -> Unit = {},
+    onOpenProfile: () -> Unit = {},
+    onOpenHowItWorks: () -> Unit = {},
     experiment: ExperimentState = ExperimentState(),
     onOpenExperiment: () -> Unit = {},
     onToggleKept: (String, Boolean) -> Unit = { _, _ -> },
@@ -105,6 +107,31 @@ fun MeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onOpenBackup)
+                .padding(vertical = 12.dp)
+        )
+
+        // Имя и обращение — здесь, а не только при первом запуске: имя
+        // написали с ошибкой, обращение выбрали наспех, знакомство вообще
+        // пропустили. Ответ, который нельзя изменить, — это анкета
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "Как обращаться →",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpenProfile)
+                .padding(vertical = 12.dp)
+        )
+
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "Как устроено →",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpenHowItWorks)
                 .padding(vertical = 12.dp)
         )
         Spacer(Modifier.height(24.dp))
@@ -213,7 +240,7 @@ private fun AllNumbers(totals: Totals) {
                         HorizontalDivider(Modifier.padding(vertical = 12.dp))
                         NumberRow("Барьер сработал", totals.distractionsCaught.toString())
                         NumberRow(
-                            "Из них вернулась к работе",
+                            "Из них вернулись к работе",
                             "${totals.distractionsReturned} из ${totals.distractionsCaught}"
                         )
                     }
@@ -292,8 +319,8 @@ private val sampleState = MeState(
         Insights.Card(
             kind = Insights.KIND_DURATION,
             fact = "Сессии по 20 мин ты доводишь до конца в 85% случаев, по 45 — в 40%.",
-            meaning = "Короткая сессия, которую ты закончила, продвигает дальше длинной, " +
-                "которую бросила. Похоже, твой размер захода — 20 минут.",
+            meaning = "Короткий заход, доведённый до конца, продвигает дальше длинного, " +
+                "который бросили. Похоже, твой размер захода — 20 минут.",
         ),
     ),
     totals = Totals(

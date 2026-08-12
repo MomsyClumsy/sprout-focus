@@ -1,8 +1,6 @@
 package com.sprout.focus.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,9 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,10 +40,18 @@ import com.sprout.focus.ui.PlantArt
 @Composable
 fun WelcomeScreen(
     onDone: (name: String?, gender: Gender) -> Unit,
+    /**
+     * Начать сразу с вопроса об имени.
+     *
+     * Так знакомство встречает того, кто приложением уже пользуется:
+     * после обновления ему нужен только новый вопрос, а не рассказ
+     * про замысел, который он проверил на себе за месяц.
+     */
+    nameOnly: Boolean = false,
 ) {
-    var page by rememberSaveable { mutableIntStateOf(0) }
+    var page by rememberSaveable { mutableIntStateOf(if (nameOnly) NAME_PAGE else 0) }
     var name by rememberSaveable { mutableStateOf("") }
-    var gender by rememberSaveable { mutableIntStateOf(Gender.UNKNOWN.ordinal) }
+    var gender by rememberSaveable { mutableStateOf(Gender.UNKNOWN) }
 
     Column(
         modifier = Modifier
@@ -64,7 +68,7 @@ fun WelcomeScreen(
             0 -> Page(
                 title = "Это Sprout",
                 body = "Приложение для тех дней, когда дело простое, а начать невозможно.\n\n" +
-                    "Оно не подгоняет и не считает, сколько ты не сделал — оно помогает " +
+                    "Оно не подгоняет и не считает, сколько не сделано, — оно помогает " +
                     "сделать первый шаг и замечает, что тебе мешает."
             )
 
@@ -84,36 +88,32 @@ fun WelcomeScreen(
             )
 
             else -> {
-                Text("Как тебя звать?", style = MaterialTheme.typography.headlineMedium)
+                Text("Как тебя зовут?", style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Чтобы приложение обращалось к тебе, а не к «пользователю». " +
-                        "Можно пропустить — тогда оно будет говорить безлично.",
+                    // Тому, кто приложением уже пользуется, надо объяснить,
+                    // откуда взялся вопрос: экран появился после обновления,
+                    // и «как раньше» здесь — обещание, а не оговорка
+                    if (nameOnly)
+                        "Sprout научился обращаться по имени. Можно пропустить — " +
+                            "тогда он будет говорить безлично, как раньше."
+                    else
+                        "Чтобы приложение обращалось к тебе, а не к «пользователю». " +
+                            "Можно пропустить — тогда оно будет говорить безлично.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(24.dp))
 
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Имя") },
-                    placeholder = { Text("Марина") },
-                    modifier = Modifier.fillMaxWidth(),
+                // Те же поля, что на экране «Как обращаться»: спрашивают
+                // об этом дважды, а вопрос должен быть один
+                VoiceFields(
+                    name = name,
+                    gender = gender,
+                    onName = { name = it },
+                    onGender = { gender = it },
                 )
-
-                Spacer(Modifier.height(20.dp))
-                Text(
-                    "Как о тебе говорить?",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GenderChip("ты сама", Gender.FEMININE, gender) { gender = it.ordinal }
-                    GenderChip("ты сам", Gender.MASCULINE, gender) { gender = it.ordinal }
-                    GenderChip("безлично", Gender.UNKNOWN, gender) { gender = it.ordinal }
-                }
             }
         }
 
@@ -121,29 +121,32 @@ fun WelcomeScreen(
 
         Button(
             onClick = {
-                if (page < 3) page++
-                else onDone(name, Gender.entries[gender])
+                if (page < NAME_PAGE) page++
+                else onDone(name, gender)
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-        ) { Text(if (page < 3) "Дальше" else "Начать") }
+        ) { Text(if (page < NAME_PAGE) "Дальше" else "Начать") }
 
         Spacer(Modifier.height(8.dp))
         // Пропустить можно с любого экрана и без единого вопроса: знакомство,
         // которое нельзя прервать, — первое требование приложения к человеку
         TextButton(
-            onClick = { onDone(name.takeIf { page == 3 }, Gender.entries[gender]) },
+            onClick = { onDone(name.takeIf { page == NAME_PAGE }, gender) },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                if (page < 3) "Пропустить" else "Не сейчас",
+                if (page < NAME_PAGE) "Пропустить" else "Не сейчас",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Spacer(Modifier.height(32.dp))
     }
 }
+
+/** Страница с именем — последняя, и единственная, куда можно войти сразу. */
+private const val NAME_PAGE = 3
 
 @Composable
 private fun Page(title: String, body: String) {
@@ -157,11 +160,3 @@ private fun Page(title: String, body: String) {
     )
 }
 
-@Composable
-private fun GenderChip(label: String, value: Gender, selected: Int, onPick: (Gender) -> Unit) {
-    FilterChip(
-        selected = selected == value.ordinal,
-        onClick = { onPick(value) },
-        label = { Text(label) },
-    )
-}
